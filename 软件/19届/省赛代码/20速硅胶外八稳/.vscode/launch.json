@@ -1,0 +1,24 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "cppdbg",
+      "request": "launch",
+      "args": [],
+      "stopAtEntry": false,
+      "externalConsole": true,
+      "cwd": "e:/github仓库/dianciSmartcar/软件/19届/省赛代码/20速硅胶外八稳/20速硅胶外八稳/7_11_30速2/7_7_31速/4_22stc32F/Project/USER/src",
+      "program": "e:/github仓库/dianciSmartcar/软件/19届/省赛代码/20速硅胶外八稳/20速硅胶外八稳/7_11_30速2/7_7_31速/4_22stc32F/Project/USER/src/build/Debug/outDebug",
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    }
+  ]
+}
