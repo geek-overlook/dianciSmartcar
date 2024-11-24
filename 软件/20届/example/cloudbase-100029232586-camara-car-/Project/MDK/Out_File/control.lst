@@ -1,0 +1,635 @@
+C251 COMPILER V5.60.0,  control                                                            22/11/24  22:30:24  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE control
+OBJECT MODULE PLACED IN .\Out_File\control.obj
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE C:\Work_space_All\Car_20\STC32G12K128_Library-master\STC32G12K128_Libr
+                    -ary-master\Example\cloudbase-100029232586-camara-car-\Project\MDK\control.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BRO
+                    -WSE INCDIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\U
+                    -SER\inc;..\USER\src;..\..\Libraries\seekfree_components) DEBUG PRINT(.\Out_File\control.lst) TABS(2) OBJECT(.\Out_File\c
+                    -ontrol.obj) 
+
+stmt  level    source
+
+    1          #include "headfile.h"
+    2          
+    3          
+    4          int motor_pwm_out = 1050;//pwm赋值给电机
+    5          int steer_pwm_out = steet_midlle;//pwm赋值给电机,628舵机机械中值
+    6          
+    7          int16 dat = 0;//编码器速度
+    8          pid_t motor_pid;
+    9          pid_t steer_pid;
+   10          pid_t inertia_pid;
+   11          unsigned char TM3_Isr_count=0;
+   12          int circle_run_point[20];
+   13          uint16 circle_begin_distence = 0;
+   14          uint16 circle_no_distence = 41000;
+   15          uint16 cross_distence = 50000;
+   16          uint16 cross_cricle_distence = 62000;
+   17          uint16 ramp_distence = 0;
+   18          uint16 tuen_pro_distence = 60000;
+   19          uint16 zebra_distence = 0;
+   20          uint8 key_mode =0;
+   21          int key_test = 0;
+   22          unsigned char process_flag = 1;
+   23          uint8 car_ready_flag = 0;//车辆状态
+   24          uint8 car_ready_gogogo = 0;//发车标志
+   25          enum count_flag_g count_crbegin_flag;
+   26          enum count_flag_g count_nocri_flag;
+   27          enum count_flag_g count_ramp_flag;
+   28          enum count_flag_g count_cross_flag;
+   29          enum count_flag_g count_cross_cricle_flag;
+   30          enum count_flag_g count_turn_pro_flag;
+   31          enum count_flag_g count_zebra_flag;
+   32          float A = 0.01;
+   33          float bas_kp = 5;
+   34          float KP = 0;
+   35          int test0 = 0;
+   36          
+   37          int key_scan( int mode)
+   38          {
+   39   1          static unsigned int key=1;
+   40   1          if(mode)key=1;//连续扫描按键
+   41   1          if(key==1&&(P16==0||P17==0||P50==0||P51==0))
+   42   1          {
+   43   2              delay_ms(10);//消抖
+   44   2              key=0;
+   45   2              if(P17==0){return 1;}
+   46   2              else if(P16==0){return 2;}
+   47   2              else if(P51==0){return 3;}
+   48   2              else if(P50==0){return 4;}
+   49   2          }
+   50   1          else if(P17==1&&P16==1&&P51==1&&P50==1) //无按键按下
+   51   1          {
+   52   2           key=1;
+   53   2          }
+   54   1          return 0;
+   55   1      }
+C251 COMPILER V5.60.0,  control                                                            22/11/24  22:30:24  PAGE 2   
+
+   56          
+   57          void addToArray(DynamicArray *dArray, uint8 value) {
+   58   1          // 增加数组的大小
+   59   1          uint8 *newArray = realloc(dArray->array, (dArray->size + 1) * sizeof(int));
+   60   1          
+   61   1          dArray->array = newArray;
+   62   1          dArray->array[dArray->size] = value;
+   63   1          dArray->size++;
+   64   1      }
+   65          
+   66          //double calc_ave(DynamicArray *dArray) {
+   67          //    int sum = 0;size_t i;
+   68          //    if (dArray->size == 0) {
+   69          //        return 0.0; // 避免除以0
+   70          //    }
+   71          
+   72          //    for (i = 0; i < dArray->size; i++) {
+   73          //        sum += dArray->array[i];
+   74          //    }
+   75          
+   76          //    return (double)sum / dArray->size;
+   77          //}
+   78          
+   79          float calc_ave(int arr[], int size) {
+   80   1        int i;
+   81   1        float sum = 0.0f;
+   82   1        for (i = 0; i < size; i++) {
+   83   2          sum += arr[i];
+   84   2        }
+   85   1        return sum / size;
+   86   1      }
+   87          
+   88          //计算白块长度
+   89          int countOnes(int arr[], int size) {
+   90   1        int count = 0,i;
+   91   1        for (i = 0; i < size; i++) {
+   92   2          if (arr[i] == 1) {
+   93   3            count++;
+   94   3          }
+   95   2        }
+   96   1        return count;
+   97   1      }
+   98          
+   99          
+  100          void KP_get(int8 ccd_offset)
+  101          {
+  102   1        if(ccd_offset < 0){
+  103   2          ccd_offset = -ccd_offset;
+  104   2        }
+  105   1        KP = (A*(float)ccd_offset*(float)ccd_offset) + (float)bas_kp;
+  106   1        
+  107   1        if(KP > 14)KP = 14;
+  108   1        
+  109   1      }
+  110          
+  111          float IncPID_realize(pid_t *pid, float temp_val) {
+  112   1          float increment;
+  113   1      
+  114   1          pid->err = pid->target_val - temp_val; // 计算当前误差
+  115   1      
+  116   1          // 防止积分项的累积误差过大
+  117   1          pid->integral += pid->err;
+  118   1          if (pid->integral > 120) {
+  119   2              pid->integral = 120;
+  120   2          } else if (pid->integral < -70) {
+  121   2              pid->integral = -70;
+C251 COMPILER V5.60.0,  control                                                            22/11/24  22:30:24  PAGE 3   
+
+  122   2          }
+  123   1      
+  124   1          // 计算PID控制器的输出值增量
+  125   1          increment = pid->Kp * (pid->err - pid->err_next) // 比例项
+  126   1                      + pid->Ki * pid->err // 积分项
+  127   1                      + pid->Kd * (pid->err - 2 * pid->err_next + pid->err_last); // 微分项
+  128   1      
+  129   1          pid->actual_val += increment;
+  130   1      
+  131   1          // 更新误差值
+  132   1          pid->err_last = pid->err_next;
+  133   1          pid->err_next = pid->err;
+  134   1      
+  135   1          // 限制输出值
+  136   1          if (pid->actual_val > 500) {
+  137   2              pid->actual_val = 500;
+  138   2          } else if (pid->actual_val < -500) {
+  139   2              pid->actual_val = -500;
+  140   2          }
+  141   1      
+  142   1          return pid->actual_val;
+  143   1      }
+  144          
+  145          // 位置 pid
+  146          float PosPID_realize(pid_t *pid, float temp_val)
+  147          {
+  148   1          pid->err = (pid->target_val - temp_val);
+  149   1          // 积分限幅
+  150   1          pid->integral += pid->err;
+  151   1      
+  152   1          if(pid->integral > 300)
+  153   1              pid->integral = 300;
+  154   1          else if(pid -> integral < -70)
+  155   1              pid->integral = -70;
+  156   1      
+  157   1          pid->actual_val = pid->Kp * pid->err + pid->Ki * pid->integral + pid->Kd * (pid->err - pid-> err_next
+             -);
+  158   1          pid->err_next = pid->err;
+  159   1          return pid->actual_val;
+  160   1      }
+  161          
+  162          
+  163          void PID_param_init(pid_t *pid)
+  164          {
+  165   1          memset(pid, 0, sizeof(pid));
+  166   1      
+  167   1        pid->target_val = 0.0;
+  168   1          pid->actual_val = 0.0;
+  169   1          pid->integral = 0.0;
+  170   1          pid->err = 0.0;
+  171   1          pid->err_next = 0.0;
+  172   1          pid->err_last = 0.0;
+  173   1          pid->Kp = 0.0;
+  174   1          pid->Ki = 0.0;
+  175   1          pid->Kd = 0.0;
+  176   1      }
+  177          
+  178          // 位置式 PID 角度外环
+  179          float pid_realize_a(float actual, float set, float _p, float _d) {
+  180   1          static float last_error = 0.0f;
+  181   1          static float last_out_d = 0.0f;
+  182   1          // static float last_actual = 0.0f;
+  183   1          // static float derivative = 0.0f;
+  184   1      
+  185   1          /* 当前误差 */
+  186   1          float error = set - actual;
+C251 COMPILER V5.60.0,  control                                                            22/11/24  22:30:24  PAGE 4   
+
+  187   1      
+  188   1          /* 微分先行 */
+  189   1          /*
+  190   1          float temp = 0.618f * _d + _p;
+  191   1          float c3 = _d / temp;
+  192   1          float c2 = (_d + _p) / temp;
+  193   1          float c1 = 0.618f * c3;
+  194   1          derivative = c1 * derivative + c2 * actual - c3 * last_actual;
+  195   1          */
+  196   1      
+  197   1          /* 不完全微分 */
+  198   1          float out_d = _d * 0.8f * (error - last_error) + 0.2f * last_out_d;
+  199   1          // float out_d = 0.8f * derivative + 0.2f * last_out_d;
+  200   1      
+  201   1          /* 实际输出 */
+  202   1          float output = _p * error + out_d;
+  203   1      
+  204   1          /* 更新参数 */
+  205   1          last_error = error;
+  206   1          last_out_d = out_d;
+  207   1          // last_actual = actual;
+  208   1      
+  209   1          return output;
+  210   1      }
+  211          
+  212          // 偏差滑动平均滤波
+  213          float filter(float value) 
+  214          {
+  215   1          static float filter_buf[3] = {0};
+  216   1      
+  217   1        filter_buf[2] = filter_buf[1];
+  218   1        filter_buf[1] = filter_buf[0];
+  219   1        filter_buf[0] = value;
+  220   1      
+  221   1        return (filter_buf[2] + filter_buf[1] + filter_buf[0]) / 3.0f;
+  222   1      }
+  223          
+  224          
+  225          void key_1(){
+  226   1        key_test=key_scan(0);
+  227   1        if(key_test==KEY1_PRESS){motor_pid.target_val += 50;}
+  228   1        if(key_test==KEY2_PRESS){motor_pid.target_val -= 50;}
+  229   1        if(key_test==KEY3_PRESS){steer_pid.Kd += 0.5;}
+  230   1        if(key_test==KEY4_PRESS){steer_pid.Kd -= 0.5;}
+  231   1      }
+  232          
+  233          int max(int a, int b) {
+  234   1        if (a >= b) {
+  235   2          return a;
+  236   2        } else {
+  237   2          return b;
+  238   2        }
+  239   1      }
+  240          
+  241          //计算最大连续白点数量
+  242          int count_ones(uint16 arr[], uint16 n) {
+  243   1        uint16 count = 0, max_count = 0,i;
+  244   1        for ( i = 0; i < n; i++) {
+  245   2          if (arr[i] == 1) {
+  246   3            count++;
+  247   3          } else {
+  248   3            max_count = max(max_count, count);
+  249   3            count = 0;
+  250   3          }
+  251   2        }
+  252   1        max_count = max(max_count, count);  // 处理数组末尾的连续1
+C251 COMPILER V5.60.0,  control                                                            22/11/24  22:30:24  PAGE 5   
+
+  253   1        return max_count;
+  254   1      }
+  255          
+  256          //车辆开机自检，连续短鸣声自检通过
+  257          void car_check(){
+  258   1        uint32 count_car_check = 0;
+  259   1        P32 = 1;
+  260   1        while(++count_car_check < 200000){}//延迟500ms
+  261   1        count_car_check = 0;
+  262   1        P32 = 0;
+  263   1      
+  264   1      //第一项检查
+  265   1        while(!(count_ones(ccd_data_02,128)>46&&count_ones(ccd_data_02,128)<53)){}
+  266   1      
+  267   1        while(++count_car_check < 200000){}//延迟500ms
+  268   1        count_car_check = 0;
+  269   1        P32 = 1;
+  270   1        while(++count_car_check < 200000){}//延迟500ms
+  271   1        count_car_check = 0;
+  272   1        P32 = 0;
+  273   1      
+  274   1      //第二项检查
+  275   1        while(!(count_ones(ccd_data_01,128)>24&&count_ones(ccd_data_01,128)<32)){}
+  276   1      
+  277   1        while(++count_car_check < 200000){}//延迟500ms
+  278   1        count_car_check = 0;
+  279   1        P32 = 1;
+  280   1        while(++count_car_check < 200000){}//延迟500ms
+  281   1        count_car_check = 0;
+  282   1        P32 = 0;
+  283   1      
+  284   1      //第三项检查
+  285   1      
+  286   1        while(++count_car_check < 200000){}//延迟500ms
+  287   1        count_car_check = 0;
+  288   1        P32 = 1;
+  289   1        while(++count_car_check < 200000){}//延迟500ms
+  290   1        count_car_check = 0;
+  291   1        P32 = 0;
+  292   1      
+  293   1      
+  294   1        while(++count_car_check > 10000)count_car_check = 0;
+  295   1      
+  296   1        
+  297   1        car_ready_flag = 1;//允许发车
+  298   1      }
+  299          
+  300          //显示ccd二值化图像
+  301          void lcd_show_ccd(uint16 p1[],uint16 p2[])
+  302          {
+  303   1        uint8 x1 = 0; //屏幕0-127
+  304   1        uint8 y1 = 0; //ccd1数据
+  305   1        
+  306   1        uint8 x2 = 0; //屏幕0-127
+  307   1        uint8 y2 = 0; //ccd1数据
+  308   1        for(x1 = 0; x1 < 128; x1++)
+  309   1        {
+  310   2          if(p1[x1] == 1)lcd_drawpoint(128 - x1, 50, WHITE);
+  311   2          else lcd_drawpoint(128 - x1, 50, RED);  
+  312   2          
+  313   2        }
+  314   1      
+  315   1        for(x2 = 0; x2 < 128; x2++)
+  316   1        {
+  317   2          if(p2[x2] == 1)lcd_drawpoint(128 - x2, 20, WHITE);
+  318   2          else lcd_drawpoint(128 - x2, 20, RED);  
+C251 COMPILER V5.60.0,  control                                                            22/11/24  22:30:24  PAGE 6   
+
+  319   2          
+  320   2        } 
+  321   1      }
+  322          
+  323          void car_init(void){
+  324   1        lcd_init(); //初始化屏幕
+  325   1        lcd_clear(BLACK); //设背景为黑色
+  326   1      
+  327   1        car_ready_flag = 0;
+  328   1        
+  329   1        steer_pid.Kp=7.3;
+  330   1        steer_pid.Kd=17;
+  331   1        steer_pid.Ki=0;
+  332   1        
+  333   1        PID_param_init(&motor_pid);
+  334   1        motor_pid.target_val = 0;
+  335   1        motor_pid.Kp = 12 ;
+  336   1        motor_pid.Ki = 3;
+  337   1        motor_pid.Kd = 0;
+  338   1      
+  339   1        PID_param_init(&inertia_pid);
+  340   1        inertia_pid.Kp = 3;
+  341   1        inertia_pid.Ki = 2.6;
+  342   1        inertia_pid.Kd = 13;  
+  343   1      
+  344   1        // 无线转串口
+  345   1        wireless_uart_init();
+  346   1        
+  347   1        
+  348   1        ctimer_count_init(CTIM0_P34); 
+  349   1        
+  350   1        //开启中断
+  351   1        pit_timer_ms(TIM_3,5);
+  352   1        
+  353   1        //蜂鸣器
+  354   1        gpio_mode(P3_2,GPO_PP);
+  355   1        P32 = 0;  
+  356   1        
+  357   1        gpio_mode(P2_6,GPO_PP);
+  358   1        P26 = 0;  
+  359   1        
+  360   1      //  circle_run_point = null;
+  361   1      
+  362   1        //imu660
+  363   1        while(imu660ra_init()) delay_ms(500);
+  364   1      
+  365   1        pwm_init(PWMA_CH3P_P24, 17000, 0);//电机
+  366   1        pwm_init(PWMB_CH3_P33, 50, steet_midlle);//舵机
+  367   1        pwm_init(PWMB_CH1_P00, 50, 0);//电调
+  368   1        pwm_init(PWMB_CH2_P01, 50, 0);//电调
+  369   1      
+  370   1        //EnableGlobalIRQ();
+  371   1        ccd_init();    //ccd初始化
+  372   1        
+  373   1        //tof初始化
+  374   1        while(dl1b_init()){
+  375   2          delay_ms(500);
+  376   2        }
+  377   1          circle_left_check = 1 ;
+  378   1          circle_left_big_check = 1 ;
+  379   1          circle_right_check = 1 ;
+  380   1          cross_check = 1 ;
+  381   1          cross_circle_cleck = 1;
+  382   1          ramp_check = 1 ;
+  383   1      }
+  384          
+C251 COMPILER V5.60.0,  control                                                            22/11/24  22:30:24  PAGE 7   
+
+  385          //菜单界面0
+  386          void display_0(void){
+  387   1        if (flag_ramp != RAMP_NONE){
+  388   2          lcd_showstr(0, 180, "RAMP_NONE ");
+  389   2            //P32 = 0;
+  390   2        }
+  391   1        else if(flag_cross_circle != CROSS_CIRCLE_NONE) {
+  392   2          // lcd_showstr(0, 180, "L_BIN ");
+  393   2          //P32 = 0;
+  394   2        }
+  395   1        else if(flag_circle == CIRCLE_LEFT_BEGIN) {
+  396   2          lcd_showstr(0, 180, "L_BIN ");
+  397   2          //P32 = 0;
+  398   2        }
+  399   1        else if(flag_cross != CROSS_NONE){
+  400   2          lcd_showstr(0, 180, "CROSS ");
+  401   2          //P32 = 1;
+  402   2        }
+  403   1        else if(flag_circle == CIRCLE_LEFT_IN){
+  404   2          lcd_showstr(0, 180, "C_LIN ");
+  405   2             // P32 = 0;
+  406   2        }
+  407   1        else if(flag_circle == CIRCLE_LEFT_RUNNING){
+  408   2          lcd_showstr(0, 180, "C_LRN ");
+  409   2          //P32 = 0;
+  410   2        }
+  411   1        else if(flag_circle == CIRCLE_LEFT_OUT){
+  412   2          lcd_showstr(0, 180, "C_LOUT");
+  413   2          //P32 = 1;
+  414   2        }
+  415   1        else if(flag_circle == CIRCLE_NONE){
+  416   2          lcd_showstr(0, 180, "C_NONE ");
+  417   2          P32 = 0;
+  418   2        }
+  419   1        else if(flag_circle == CIRCLE_RIGHT_BEGIN) {
+  420   2          lcd_showstr(0, 180, "R_BIN ");
+  421   2           //P32 = 1;
+  422   2        }
+  423   1        else if(flag_circle == CIRCLE_RIGHT_IN){
+  424   2          lcd_showstr(0, 180, "C_RIN ");
+  425   2           //P32 = 0;
+  426   2        }
+  427   1        else if(flag_circle == CIRCLE_RIGHT_RUNNING){
+  428   2          lcd_showstr(0, 180, "C_RRN ");
+  429   2           //P32 = 1;
+  430   2        }
+  431   1        else if(flag_circle == CIRCLE_RIGHT_OUT){
+  432   2          lcd_showstr(0, 180, "C_ROUT");
+  433   2           //P32 = 0;
+  434   2        }
+  435   1            
+  436   1        //lcd_showuint16(0, 0,count_ones(ccd_data_01,128));
+  437   1        lcd_show_ccd(ccd_data_01,ccd_data_02);//显示数据 ccd1为高，ccd2低
+  438   1      //      lcd_showuint16(50, 0,count_ones(ccd_data_02,128));
+  439   1        lcd_showuint8(0, 18,right_point1);
+  440   1        lcd_showuint8(90, 18,left_point1);
+  441   1        lcd_showint8(32, 18,offset1);
+  442   1        // lcd_showuint8(64, 18,right_point1-left_point1);
+  443   1        lcd_showuint8(64, 18,count_ones_ccd1);
+  444   1        
+  445   1        lcd_showuint8(0, 0,Now_right_point2);
+  446   1        lcd_showuint8(90, 0,Now_left_point2);
+  447   1        lcd_showint8(32, 0,offset2);
+  448   1        lcd_showuint8(64, 0,count_ones_ccd2);
+  449   1      
+  450   1      
+C251 COMPILER V5.60.0,  control                                                            22/11/24  22:30:24  PAGE 8   
+
+  451   1        if(key_test==KEY3_PRESS){A += 0.001;}
+  452   1        if(key_test==KEY4_PRESS){A -= 0.001;}
+  453   1        //lcd_showfloat(50,120,KP,2,1);
+  454   1      //  lcd_showfloat(70,120,A,1,3);
+  455   1           //lcd_showuint16(0,120,count_ones(ccd_data_02, 128));
+  456   1        //lcd_showfloat(0,120,KP,2,3); 
+  457   1        //lcd_showfloat(0, 120,KP , 2,3);
+  458   1        //lcd_showfloat(0, 150,A , 1,3);test0
+  459   1        //lcd_showuint16(60, 150,(zebra_stop(ccd_data_02,128)));
+  460   1        lcd_showuint16(0, 120,test0);
+  461   1        //lcd_showuint16(0, 150,dl1b_distance_mm);
+  462   1        lcd_showfloat(60, 150,yaw_error(circle_begin_yaw,1),3,2);
+  463   1            // lcd_showuint16(80, 150,ccd1_w_count);
+  464   1      }
+  465          
+  466          //菜单界面1
+  467          void display_1(void){
+  468   1        lcd_showstr(0, 0, "S_P");
+  469   1        lcd_showfloat(40,0,turn_kp,2,1);
+  470   1        
+  471   1        lcd_showstr(0, 17, "S_D");
+  472   1        lcd_showfloat(40,17,turn_kd,2,1);
+  473   1        
+  474   1        lcd_showstr(0, 17*2, "S_I");
+  475   1        lcd_showfloat(40,17*2,steer_pid.Ki,1,2);
+  476   1      
+  477   1        lcd_showstr(0, 17*3, "tc");
+  478   1        lcd_showuint16(40,17*3,tiaocang_num);
+  479   1        
+  480   1        lcd_showstr(0, 17*4, "M_str");
+  481   1        lcd_showuint16(40,17*4,speed_stright);
+  482   1      
+  483   1        lcd_showstr(0, 17*5, "M_tur");
+  484   1        lcd_showuint16(40,17*5,speed_turn);
+  485   1        
+  486   1        lcd_showstr(0, 17*6, "M_cro");
+  487   1        lcd_showuint16(40,17*6,speed_cross);
+  488   1        
+  489   1        
+  490   1        lcd_showstr(0, 17*7, "M_ram");
+  491   1        lcd_showuint16(40,17*7,speed_ramp);
+  492   1        
+  493   1        lcd_showstr(120, key_mode * 17, "<");
+  494   1        
+  495   1        
+  496   1        if(key_test==KEY2_PRESS){
+  497   2          lcd_clear(BLACK); //  清屏
+  498   2          key_mode += 1;
+  499   2          if(key_mode >= 10)key_mode = 0;
+  500   2        }
+  501   1      
+  502   1          
+  503   1          switch (key_mode)
+  504   1          {
+  505   2            case 0 :{
+  506   3              if(key_test==KEY3_PRESS){turn_kp += 1;}//turn_kp 1
+  507   3              if(key_test==KEY4_PRESS){turn_kp -= 1;}
+  508   3              break;
+  509   3            }   
+  510   2            case 1 :{
+  511   3              if(key_test==KEY3_PRESS){turn_kd += 2;}
+  512   3              if(key_test==KEY4_PRESS){turn_kd -= 2;}
+  513   3              break;
+  514   3            }
+  515   2            case 2 :{
+  516   3              if(key_test==KEY3_PRESS){steer_pid.Ki += 0.01;}
+C251 COMPILER V5.60.0,  control                                                            22/11/24  22:30:24  PAGE 9   
+
+  517   3              if(key_test==KEY4_PRESS){steer_pid.Ki -= 0.01;}
+  518   3              break;
+  519   3            }
+  520   2            case 3 :{
+  521   3              if(key_test==KEY3_PRESS){motor_pid.target_val += 200;}
+  522   3              if(key_test==KEY4_PRESS){motor_pid.target_val -= 200;}
+  523   3              break;
+  524   3            }
+  525   2            case 4 :{
+  526   3              if(key_test==KEY3_PRESS){speed_stright += 20;}
+  527   3              if(key_test==KEY4_PRESS){speed_stright -= 20;}
+  528   3              break;
+  529   3            }
+  530   2            case 5 :{
+  531   3              if(key_test==KEY3_PRESS){speed_turn += 20;}
+  532   3              if(key_test==KEY4_PRESS){speed_turn -= 20;}
+  533   3              break;
+  534   3            }
+  535   2            case 6 :{
+  536   3              if(key_test==KEY3_PRESS){speed_cross += 20;}
+  537   3              if(key_test==KEY4_PRESS){speed_cross -= 20;}
+  538   3              break;
+  539   3            }
+  540   2            case 7 :{
+  541   3              if(key_test==KEY3_PRESS){speed_ramp += 20;}
+  542   3              if(key_test==KEY4_PRESS){speed_ramp -= 20;}
+  543   3              break;
+  544   3            }
+  545   2          }
+  546   1      }
+  547          
+  548          //设置元素检测的先后顺序
+  549          void element_sort (void){
+  550   1        //1
+  551   1        if(flag_ramp != RAMP_NONE){
+  552   2          circle_left_big_check = 1;
+  553   2          ramp_check = 0;
+  554   2        }
+  555   1        //2
+  556   1        else if(flag_circle != CIRCLE_NONE){
+  557   2          cross_check = 1;
+  558   2          circle_left_big_check = 0;
+  559   2        }
+  560   1        //3
+  561   1        else if(flag_cross != CROSS_NONE){
+  562   2          circle_left_check = 1;
+  563   2          cross_check = 0;
+  564   2        }
+  565   1        //4
+  566   1        else if(flag_circle == CIRCLE_LEFT_OUT && circle_left_out_flag == 2){
+  567   2          cross_check = 1;
+  568   2          cross_circle_cleck = 1;
+  569   2          circle_left_check = 0;
+  570   2        }
+  571   1        //5
+  572   1        else if(flag_cross_circle != CROSS_CIRCLE_NONE){
+  573   2          cross_check = 0;
+  574   2          cross_circle_cleck = 0;
+  575   2          ramp_check = 1;
+  576   2        }
+  577   1        
+  578   1      
+  579   1      }
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+C251 COMPILER V5.60.0,  control                                                            22/11/24  22:30:24  PAGE 10  
+
+  code size            =      4649     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =       347     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =       282     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

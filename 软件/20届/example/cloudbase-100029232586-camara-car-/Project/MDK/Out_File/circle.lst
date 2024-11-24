@@ -1,0 +1,478 @@
+C251 COMPILER V5.60.0,  circle                                                             22/11/24  22:30:26  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE circle
+OBJECT MODULE PLACED IN .\Out_File\circle.obj
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE ..\USER\src\circle.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE I
+                    -NCDIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\i
+                    -nc;..\USER\src;..\..\Libraries\seekfree_components) DEBUG PRINT(.\Out_File\circle.lst) TABS(2) OBJECT(.\Out_File\circle.
+                    -obj) 
+
+stmt  level    source
+
+    1          #include "headfile.h"
+    2          // uint8 circle_sideline_count = 0;
+    3          // uint8 circle_distance = 0;
+    4          // uint8 circle_count = 0;  //环岛状态计次
+    5          // uint8 circle_left_in_flag = 0;//入环
+    6          // uint8 circle_right_in_flag = 0;
+    7          // uint8 circle_left_out_flag = 0;//出环
+    8          // uint8 circle_right_out_flag = 0;
+    9          // uint8 circle_left_out = 0;//出环
+   10          // uint8 ccd1_circle_left_out = 0;//出环
+   11          // uint8 l_circle_max = 0; //环岛曲线最大点
+   12          // int8 last_offset2 = 0;
+   13          uint16 distance_saw = 0;
+   14          uint16 distance_cross_saw = 0;
+   15          float circle_begin_yaw = 0;
+   16          float circle_in_yaw = 0;
+   17          float cross_circle_yaw = 0;
+   18          float circle_yaw_error = 0;
+   19          uint8 circle_big_flag = 0;
+   20          uint8 circle_small = 0;
+   21          uint8 circle_size = 0; //1为小 2为大
+   22          int count_big = 0;
+   23          int circle_flag_in_cnt=0;
+   24          int circle_flag_out_cnt=0;
+   25          int tiaocang_num=210;
+   26          
+   27          //十字圆环，过十字后检测是不是圆环后接十字，解决斜入十字无法识别问题
+   28          void cross_cricle_proccess(){
+   29   1        //过了十字后一段路程进行检测
+   30   1        if(cross_cricle_distence < 16000 && flag_cross_circle == CROSS_CIRCLE_NONE){
+   31   2          //左环判断
+   32   2          if(yaw_error(cross_circle_yaw,1) > 140 && yaw_error(cross_circle_yaw,1) < 160 ){
+   33   3            flag_cross_circle = CROSS_CIRCLE_LEFT_RUNNING;
+   34   3            //判断为真，刷新里程，用于出环进十字再开始计算
+   35   3            cross_cricle_distence = 0;
+   36   3            count_cross_cricle_flag = count_stop;
+   37   3            test0=1;
+   38   3          }
+   39   2          //右环判断
+   40   2          if(yaw_error(cross_circle_yaw,0) > 140 && yaw_error(cross_circle_yaw,0) < 160 ){
+   41   3            flag_cross_circle = CROSS_CIRCLE_RIGHT_RUNNING;
+   42   3            //判断为真，刷新里程，用于出环进十字再开始计算
+   43   3            cross_cricle_distence = 0;
+   44   3            count_cross_cricle_flag = count_stop;
+   45   3            test0=4;
+   46   3          }
+   47   2        }
+   48   1        
+   49   1      ///////////////////////////RUNNING////////////////////////////////////
+   50   1        //左环
+   51   1        else if (flag_cross_circle == CROSS_CIRCLE_LEFT_RUNNING){
+   52   2          test0=2;
+   53   2          if(count_ones_ccd1 > 50 || (yaw_error(cross_circle_yaw,1) > 225 && yaw_error(cross_circle_yaw,1) < 240)
+             -){
+   54   3            //获取出环角度
+   55   3            get_target_yaw_cross_cricle(0);
+C251 COMPILER V5.60.0,  circle                                                             22/11/24  22:30:26  PAGE 2   
+
+   56   3            flag_cross_circle = CROSS_CIRCLE_OUT;
+   57   3            //出环十字，处理类似于正常十字
+   58   3            cross_cricle_distence = 0;
+   59   3            count_cross_cricle_flag = count_start;
+   60   3          }
+   61   2        }
+   62   1        //右环
+   63   1        else if (flag_cross_circle == CROSS_CIRCLE_RIGHT_RUNNING){
+   64   2          test0 = 5;
+   65   2          if(count_ones_ccd1 > 50 || (yaw_error(cross_circle_yaw,0) > 225 && yaw_error(cross_circle_yaw,0) < 240)
+             -){
+   66   3            //获取出环角度
+   67   3            get_target_yaw_cross_cricle(1);
+   68   3            flag_cross_circle = CROSS_CIRCLE_OUT;
+   69   3            //出环十字，处理类似于正常十字
+   70   3            cross_cricle_distence = 0;
+   71   3            count_cross_cricle_flag = count_start;
+   72   3          }
+   73   2        }
+   74   1            
+   75   1      ///////////////////////////OUT////////////////////////////////////
+   76   1        //出环进十字
+   77   1        else if (flag_cross_circle == CROSS_CIRCLE_OUT){
+   78   2          test0 = 3;
+   79   2          distance_cross_saw = cross_cricle_distence;
+   80   2          if(cross_cricle_distence > 5000){
+   81   3            test0=0;
+   82   3            flag_cross_circle = CROSS_CIRCLE_NONE;
+   83   3            //防止再次进入十字圆环判断
+   84   3            cross_cricle_distence = 60000;
+   85   3          }
+   86   2        }
+   87   1        else if (flag_cross_circle != CROSS_CIRCLE_NONE && flag_cross != CROSS_NONE){
+   88   2      
+   89   2          flag_cross_circle = CROSS_CIRCLE_NONE;
+   90   2          test0=0;
+   91   2          //防止再次进入十字圆环判断
+   92   2          cross_cricle_distence = 60000;
+   93   2        }
+   94   1      }
+   95          
+   96          
+   97          void cricle_proccess()
+   98          {
+   99   1      //////////////////////////////////////////////////////////////左圆环/////////////////////////////////////
+             -///////////////////////
+  100   1      //////////////////////////////////////////////////////////////左圆环/////////////////////////////////////
+             -///////////////////////
+  101   1      //////////////////////////////////////////////////////////////左圆环/////////////////////////////////////
+             -///////////////////////
+  102   1        //状态1:赛道宽变大 左边线消失 右边线还在
+  103   1        if(flag_cross_circle == CROSS_CIRCLE_NONE && flag_circle == CIRCLE_NONE && flag_cross == CROSS_NONE && f
+             -lag_ramp == RAMP_NONE
+  104   1          && count_ones_ccd2 > 80 && count_ones_ccd1 <40 && count_ones_ccd2 < 100   //赛道宽度条件
+  105   1          && left_point2 < 15 && right_point2 < 100                                         //赛道边界条件
+  106   1          && (Now_right_point2 - right_point1) < 30                                         //右边是直线
+  107   1          && (circle_no_distence >= 39000)                                                 //二次圆环
+  108   1          && circle_left_check){
+  109   2      
+  110   2            count_crbegin_flag = count_start;
+  111   2            flag_circle = CIRCLE_LEFT_BEGIN;
+  112   2            circle_count = 0;
+  113   2        }
+  114   1      
+  115   1        //状态2：处于丢线处
+  116   1        else if(flag_circle == CIRCLE_LEFT_BEGIN) 
+C251 COMPILER V5.60.0,  circle                                                             22/11/24  22:30:26  PAGE 3   
+
+  117   1        {
+  118   2      //    if(/*误识别圆环判断*/ 0){
+  119   2      //      circle_begin_yaw = 0; 
+  120   2      //      flag_circle = CIRCLE_NONE;
+  121   2      //      circle_count = 0;
+  122   2      //    }
+  123   2          
+  124   2          circle_in_yaw = yaw;
+  125   2      
+  126   2        //用count_ones_ccd1 代替 count_ones(ccd_data_01,128)节省算力
+  127   2          if(count_ones_ccd1 > 45)
+  128   2          {
+  129   3            //记录begin状态的yaw，出环角度判断
+  130   3            circle_begin_yaw = yaw;   
+  131   3            flag_circle = CIRCLE_LEFT_IN; 
+  132   3            distance_saw = circle_begin_distence; //记录bigin到进入in状态那一刻的路程 用于判断大圆环小圆环
+  133   3            count_crbegin_flag = count_stop;
+  134   3          }
+  135   2          
+  136   2          left_point2 = right_point2 - 53;  //没进入下一个赛道前，左边线等于右边线减赛道宽
+  137   2        }
+  138   1        //状态3：处于准备进入环岛的地方 
+  139   1        else if(flag_circle == CIRCLE_LEFT_IN) {
+  140   2      
+  141   2      //    offset_keep_flag = 1;
+  142   2      
+  143   2          circle_yaw_error = yaw_error(circle_begin_yaw,1);
+  144   2          //转到一定角度进入下一状态
+  145   2          
+  146   2          if(distance_saw <= 45000){offset_keep = 16;offset_keep_flag = 1;}
+  147   2          else if(distance_saw > 45000)right_point2 = left_point2 + 15;  //切成左巡线
+  148   2          
+  149   2          
+  150   2          if(yaw_error(circle_begin_yaw,1)>60 && yaw_error(circle_begin_yaw,1)<100){ 
+  151   3            flag_circle = CIRCLE_LEFT_RUNNING;
+  152   3            offset_keep = 0;
+  153   3            offset_keep_flag = 0;
+  154   3            
+  155   3          } 
+  156   2          
+  157   2          
+  158   2      
+  159   2        }
+  160   1        
+  161   1      /////////////////////////////////////CIRCLE_LEFT_RUNNING/////////////////////////////////////
+  162   1        
+  163   1        //状态6：环岛内 （先写死了 具体offset值在下面get_offset函数） 
+  164   1        else if(flag_circle == CIRCLE_LEFT_RUNNING) {
+  165   2            
+  166   2          circle_yaw_error = yaw_error(circle_begin_yaw,1);
+  167   2      //    //情况2：转到一定角度出环
+  168   2          
+  169   2            if((right_point1 > 100 || right_point2 > 100 )&& circle_left_out_flag == 0){
+  170   3            
+  171   3            if(distance_saw <= 45000){
+  172   4              if(yaw_error(circle_begin_yaw,1)>280){ 
+  173   5                offset_keep_flag = 0;
+  174   5                
+  175   5                flag_circle = CIRCLE_LEFT_OUT;
+  176   5              }
+  177   4            }else {
+  178   4              
+  179   4              if(yaw_error(circle_begin_yaw,1)>300){ 
+  180   5                left_point2 = right_point2 - 35; 
+  181   5                offset_keep_flag = 0;
+  182   5                
+C251 COMPILER V5.60.0,  circle                                                             22/11/24  22:30:26  PAGE 4   
+
+  183   5                flag_circle = CIRCLE_LEFT_OUT;
+  184   5              }
+  185   4            }
+  186   3        
+  187   3        
+  188   3          }
+  189   2        }
+  190   1      /////////////////////////////////////CIRCLE_LEFT_OUT/////////////////////////////////////
+  191   1        //状态6：出环岛 （先不处理）
+  192   1        else if(flag_circle == CIRCLE_LEFT_OUT){//用惯导
+  193   2      
+  194   2      
+  195   2          circle_yaw_error = yaw_error(circle_begin_yaw,1);
+  196   2          target_yaw = circle_begin_yaw;
+  197   2          offset_keep_flag = 0;
+  198   2      //    if((right_point1 > 100 || right_point2 > 100 )&& circle_left_out_flag == 0){
+  199   2      //      
+  200   2            //丢右线状态，固定打角，用running状态的平均打角效果更好
+  201   2      //      if(distance_saw <= 45000 && (yaw_error(circle_begin_yaw,1)>260)){offset_keep = 18;offset_keep_flag =
+             - 0;}        //小环打脚
+  202   2      //      else if(distance_saw > 45000 && (yaw_error(circle_begin_yaw,1)>285)){offset_keep = 12;offset_keep_fl
+             -ag = 0;}      //大环打脚
+  203   2            // if(circle_left_check)offset_keep = 17;           //小环打脚
+  204   2            // else if(circle_left_big_check)offset_keep = 12;       //大环打脚
+  205   2              //P32 = 1;
+  206   2              test0 = 2;
+  207   2          
+  208   2        
+  209   2            if((yaw_error(circle_begin_yaw,1)>330 || yaw_error(circle_begin_yaw,1) < 20) && distance_saw <= 45000 
+             -/*&& count_ones_ccd1 > 25 && count_ones_ccd2 > 70*/)circle_left_out_flag = 2;   //分开大环小环判条件
+  210   2      
+  211   2            if((yaw_error(circle_begin_yaw,1)>330 || yaw_error(circle_begin_yaw,1) < 20) && distance_saw > 45000 )
+             -circle_left_out_flag = 2;      
+  212   2      //      
+  213   2          //}
+  214   2      
+  215   2          //回到与圆心平齐的位置，
+  216   2          //if(circle_left_out_flag == 2){
+  217   2          
+  218   2      //        P32 = 1;
+  219   2      //        //重新找到线，不用打死了
+  220   2      //        offset_keep = 0;
+  221   2      //        offset_keep_flag = 0;
+  222   2      
+  223   2      //        circle_count = 0;
+  224   2      //        last_left_point2 = 0;   
+  225   2      //        circle_left_in_flag = 0;  
+  226   2      //        
+  227   2      //        left_point2 = right_point2 - 50;  //左边线等于右边线减赛道宽 
+  228   2      //        test0 = 3;  
+  229   2      //      //恢复普通赛道，离开环岛
+  230   2            if((count_ones_ccd2 < 55 && Now_left_point2 > 20 && circle_left_out_flag == 2 && distance_saw <= 45000
+             -) ||
+  231   2              (count_ones_ccd2 < 55 && Now_left_point2 > 20 && count_ones_ccd1 < 40 && circle_left_out_flag == 2 &&
+             - distance_saw > 45000)){
+  232   3              P32 = 1;
+  233   3              //重新找到线，不用打死了
+  234   3              offset_keep = 0;
+  235   3              offset_keep_flag = 0;
+  236   3              count_nocri_flag = count_start;
+  237   3              circle_count = 0;          //各种标志位全部清零
+  238   3              last_left_point2 = 0;   
+  239   3              circle_left_in_flag = 0;
+  240   3              circle_left_out_flag = 0;
+  241   3              flag_circle = CIRCLE_NONE; //恢复可检测的初始状态
+  242   3              circle_begin_distence = 0;
+C251 COMPILER V5.60.0,  circle                                                             22/11/24  22:30:26  PAGE 5   
+
+  243   3              distance_saw = 0;
+  244   3              test0 = 4;
+  245   3            }
+  246   2            
+  247   2          //}
+  248   2          if( (Now_right_point2-Now_left_point2) > 48 && (Now_right_point2-Now_left_point2)<=54 
+  249   2              && offset2 > -22 && offset2 <22 ){
+  250   3                P32 = 0;
+  251   3                //重新找到线，不用打死了
+  252   3                offset_keep = 0;
+  253   3                offset_keep_flag = 0;
+  254   3                count_nocri_flag = count_start;
+  255   3                circle_count = 0;          //各种标志位全部清零
+  256   3                last_left_point2 = 0;   
+  257   3                circle_left_in_flag = 0;
+  258   3                circle_left_out_flag = 0;
+  259   3                flag_circle = CIRCLE_NONE; //恢复可检测的初始状态
+  260   3                circle_begin_distence = 0;
+  261   3                distance_saw = 0;
+  262   3                test0 = 4;
+  263   3              }
+  264   2      
+  265   2        }
+  266   1        
+  267   1      //////////////////////////////////////////////////////////////右圆环/////////////////////////////////////
+             -///////////////////////
+  268   1      //////////////////////////////////////////////////////////////右圆环/////////////////////////////////////
+             -///////////////////////
+  269   1      //////////////////////////////////////////////////////////////右圆环/////////////////////////////////////
+             -///////////////////////
+  270   1        //状态1:赛道宽变大 右边线消失 左边线还在
+  271   1        if(flag_cross_circle == CROSS_CIRCLE_NONE && flag_circle == CIRCLE_NONE && flag_cross == CROSS_NONE && f
+             -lag_ramp == RAMP_NONE
+  272   1          && count_ones_ccd2 > 80 && count_ones_ccd1 <40      //赛道宽度条件
+  273   1          && left_point2 > 20 && right_point2 > 100                                         //赛道边界条件
+  274   1          && (myabs(Now_left_point2 - left_point1)) < 30                                         //右边是直线
+  275   1          /*&& (circle_no_distence >= 39000)*/                                                  //二次圆环
+  276   1          && 1){
+  277   2      
+  278   2            count_crbegin_flag = count_start;
+  279   2            flag_circle = CIRCLE_RIGHT_BEGIN;
+  280   2            circle_count = 0;
+  281   2      
+  282   2        }
+  283   1      
+  284   1        //状态2：处于丢线处
+  285   1        else if(flag_circle == CIRCLE_RIGHT_BEGIN) {
+  286   2      
+  287   2      //    if(/*误识别圆环判断*/ 0){
+  288   2      //      circle_begin_yaw = 0; 
+  289   2      //      flag_circle = CIRCLE_NONE;
+  290   2      //      circle_count = 0;
+  291   2      //    }
+  292   2          
+  293   2          circle_in_yaw = yaw;
+  294   2      
+  295   2        //用count_ones_ccd1 代替 count_ones(ccd_data_01,128)节省算力
+  296   2          if(count_ones_ccd1 > 45)
+  297   2          {
+  298   3      
+  299   3            //记录begin状态的yaw，出环角度判断
+  300   3            circle_begin_yaw = yaw;   
+  301   3            flag_circle = CIRCLE_RIGHT_IN; 
+  302   3            distance_saw = circle_begin_distence; //记录bigin到进入in状态那一刻的路程 用于判断大圆环小圆环
+  303   3            count_crbegin_flag = count_stop;
+  304   3            
+C251 COMPILER V5.60.0,  circle                                                             22/11/24  22:30:26  PAGE 6   
+
+  305   3          }
+  306   2          
+  307   2          right_point2 = left_point2 + 53;  //没进入下一个赛道前，右边线等于左边线加赛道宽
+  308   2        }
+  309   1        //状态3：处于准备进入环岛的地方 
+  310   1        else if(flag_circle == CIRCLE_RIGHT_IN) {
+  311   2          //丢右线状态，固定打角，用running状态的平均打角效果更好
+  312   2      //    
+  313   2      //    offset_keep_flag = 1;
+  314   2      
+  315   2            circle_yaw_error = yaw_error(circle_begin_yaw,1);
+  316   2          //转到一定角度进入下一状态
+  317   2      
+  318   2          if(yaw_error(circle_begin_yaw,0)>60 && yaw_error(circle_begin_yaw,0)<100){ 
+  319   3            flag_circle = CIRCLE_RIGHT_RUNNING;
+  320   3            offset_keep = 0;
+  321   3            offset_keep_flag = 0;
+  322   3            
+  323   3          } 
+  324   2          
+  325   2          left_point2 = right_point2 - 53;  //切成右巡线
+  326   2      
+  327   2          
+  328   2        }
+  329   1        
+  330   1      /////////////////////////////////////CIRCLE_RIGHT_RUNNING/////////////////////////////////////
+  331   1        
+  332   1        //状态6：环岛内 （先写死了 具体offset值在下面get_offset函数） 
+  333   1        else if(flag_circle == CIRCLE_RIGHT_RUNNING) {
+  334   2            
+  335   2            circle_yaw_error = yaw_error(circle_begin_yaw,0);
+  336   2      //    //情况2：转到一定角度出环
+  337   2      
+  338   2          if(yaw_error(circle_begin_yaw,0)>220){ 
+  339   3            
+  340   3            offset_keep_flag = 0;
+  341   3      
+  342   3            flag_circle = CIRCLE_RIGHT_OUT;
+  343   3          }
+  344   2          right_point2 =left_point2  + 58;  //切成右巡线
+  345   2      
+  346   2        }
+  347   1      /////////////////////////////////////CIRCLE_RIGHT_OUT/////////////////////////////////////
+  348   1        //状态6：出环岛 （先不处理）
+  349   1        else if(flag_circle == CIRCLE_RIGHT_OUT){
+  350   2      
+  351   2      
+  352   2          circle_yaw_error = yaw_error(circle_begin_yaw,0);
+  353   2          
+  354   2          if(left_point2 < 28 && circle_right_out_flag == 0){
+  355   3            
+  356   3            //丢右线状态，固定打角，用running状态的平均打角效果更好
+  357   3            if(distance_saw <= 45000)offset_keep = -16;           //小环打脚
+  358   3            else if(distance_saw > 45000)offset_keep = -12;       //大环打脚
+  359   3            
+  360   3            offset_keep_flag = 1;
+  361   3            circle_right_out_flag = 1 ;  // 确认左丢线
+  362   3          }
+  363   2          if(circle_right_out_flag == 1)
+  364   2          {
+  365   3            P32=1;
+  366   3      //      circle_flag_out_cnt++;
+  367   3      //      if(count_ones_ccd1 > 25 && count_ones_ccd2 > 70 )
+  368   3      //      {
+  369   3              if((yaw_error(circle_begin_yaw,0)>350 || yaw_error(circle_begin_yaw,0) < 20) && distance_saw <= 45000
+             -)circle_right_out_flag = 2;   //分开大环小环判条件
+C251 COMPILER V5.60.0,  circle                                                             22/11/24  22:30:26  PAGE 7   
+
+  370   3              if((yaw_error(circle_begin_yaw,0)>340 || yaw_error(circle_begin_yaw,0) < 20) && distance_saw > 45000)
+             -circle_right_out_flag = 2;
+  371   3      //      }
+  372   3            
+  373   3      //      if(circle_flag_out_cnt>=30)   circle_right_out_flag=2;
+  374   3              
+  375   3          }
+  376   2          //回到与圆心平齐的位置，
+  377   2          else if(circle_right_out_flag == 2)
+  378   2          {
+  379   3            P32=0;  
+  380   3            //重新找到线，不用打死了
+  381   3            offset_keep = 0;
+  382   3            offset_keep_flag = 0;
+  383   3      
+  384   3            circle_count = 0;
+  385   3            last_right_point2 = 0;    
+  386   3            circle_right_in_flag = 0; 
+  387   3            
+  388   3            right_point2 = left_point2 + 53;  //右边线等于左边线加赛道宽 
+  389   3            
+  390   3            if(count_ones_ccd1 < 35)circle_count = 1;   //调的时候发现环岛状态会提前结束，多设置了个标志位
+  391   3            
+  392   3            //恢复普通赛道，离开环岛
+  393   3            if(ccd2_w_count < 53 && right_point2 < 108 && circle_count == 1)
+  394   3            {
+  395   4              //重新找到线，不用打死了
+  396   4              offset_keep = 0;
+  397   4              offset_keep_flag = 0;
+  398   4              count_nocri_flag = count_start;
+  399   4              circle_count = 0;          //各种标志位全部清零
+  400   4              last_right_point2 = 0;    
+  401   4              circle_right_in_flag = 0;
+  402   4              circle_right_out_flag = 0;
+  403   4              flag_circle = CIRCLE_NONE; //恢复可检测的初始状态
+  404   4              circle_begin_distence = 0;
+  405   4              distance_saw = 0;
+  406   4              circle_flag_in_cnt=0;
+  407   4              circle_flag_out_cnt=0;
+  408   4            }
+  409   3          }
+  410   2      
+  411   2        }
+  412   1      }
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =      2278     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =        31     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =        83     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

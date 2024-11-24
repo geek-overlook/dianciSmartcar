@@ -1,0 +1,155 @@
+C251 COMPILER V5.60.0,  inertia                                                            22/11/24  22:30:25  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE inertia
+OBJECT MODULE PLACED IN .\Out_File\inertia.obj
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE ..\USER\src\inertia.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE 
+                    -INCDIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\
+                    -inc;..\USER\src;..\..\Libraries\seekfree_components) DEBUG PRINT(.\Out_File\inertia.lst) TABS(2) OBJECT(.\Out_File\inert
+                    -ia.obj) 
+
+stmt  level    source
+
+    1          #include "inertia.h"
+    2          
+    3          float X_acc = 0;
+    4          float Y_acc = 0;
+    5          float Z_acc = 0;
+    6          float X_gyro = 0;
+    7          float Y_gyro = 0;
+    8          float Z_gyro = 0;
+    9          float yaw = 0,target_yaw = 0,turn_pro_yaw = 0;
+   10          uint8 turn_pro_flag = 99;//0左1右
+   11          uint8 flag_turn_pro = 0;
+   12          float offset_r = 0,offset_r_x=0,offset_r_d=0;
+   13          //固定角度与标志位，在需要固定打角的地方置1,不用时及时置零
+   14          int8 offset_keep = 0;
+   15          int8 offset_keep_flag = 0;
+   16          
+   17          
+   18          //计算惯导偏差值，只需在定时器调用一次，多个元素不用多次调用
+   19          //用法：1.在元素处理过程设定target_yaw
+   20          //     2.在巡线方式设置在该元素用offset_inertia作为偏差值
+   21          void get_inertia_offset(void){
+   22   1          int16 temp_offset=0;
+   23   1          temp_offset = yaw-target_yaw;
+   24   1          if(temp_offset > 180){
+   25   2              temp_offset-=360; 
+   26   2          }else if(temp_offset < -180){
+   27   2              temp_offset+=360;
+   28   2          }
+   29   1      
+   30   1          if(temp_offset>100){
+   31   2              temp_offset = 100;
+   32   2          }else if (temp_offset<-100){
+   33   2              temp_offset = -100;
+   34   2          }
+   35   1          offset_inertia = -(int8)temp_offset;
+   36   1      }
+   37          
+   38          //计算当前yaw与输入yaw偏差值，1左偏差(左环岛），0右偏差
+   39          //输出0~360
+   40          float yaw_error(float yaw_angle,uint8 mode){
+   41   1          float error=0;
+   42   1          if(mode){
+   43   2              error = yaw - yaw_angle;
+   44   2          }else{
+   45   2              error = yaw_angle - yaw;
+   46   2          }
+   47   1      
+   48   1      
+   49   1          if(error > 360){
+   50   2              error -= 360; 
+   51   2          }else if(error < 0){
+   52   2              error += 360;
+   53   2          }
+   54   1          return error;
+   55   1      }
+   56          
+C251 COMPILER V5.60.0,  inertia                                                            22/11/24  22:30:25  PAGE 2   
+
+   57          //0：左环
+   58          //1：右环
+   59          void get_target_yaw_cross_cricle(int8 mode){
+   60   1          if(mode){
+   61   2              target_yaw = cross_circle_yaw;
+   62   2              target_yaw -= 270;
+   63   2          }else{
+   64   2              target_yaw = cross_circle_yaw;
+   65   2              target_yaw += 270;
+   66   2          }
+   67   1      
+   68   1          if(target_yaw > 360){
+   69   2              target_yaw -= 360; 
+   70   2          }else if(target_yaw < 0){
+   71   2              target_yaw += 360;
+   72   2          }
+   73   1      }
+   74          
+   75          void get_target_yaw(int8 angle){
+   76   1      //    if(angle >= -5 && angle <= 5){
+   77   1      //        target_yaw = yaw;
+   78   1      //        target_yaw = angle;
+   79   1      //    }
+   80   1      //    else if (angle >= -6 && angle <= -5){
+   81   1      //        target_yaw = yaw;
+   82   1      //        target_yaw += angle;
+   83   1      //        target_yaw -= 3;
+   84   1      //    }
+   85   1      //    else if (angle >=- 11 && angle <= -7){
+   86   1      //        target_yaw = yaw;
+   87   1      //        target_yaw += angle;
+   88   1      //        target_yaw -= 4;
+   89   1      //    }
+   90   1      //    else if (angle >=-15 && angle <= -12){
+   91   1      //        target_yaw = yaw;
+   92   1      //        target_yaw += angle;
+   93   1      //        target_yaw -= 5;
+   94   1      //    }
+   95   1      //    else if (angle >=-20 && angle <= -15){
+   96   1      //        target_yaw = yaw;
+   97   1      //        target_yaw += angle;
+   98   1      //        target_yaw -= 5;
+   99   1      //    }
+  100   1      //    else if (angle >= 6 && angle <= 20){
+  101   1      //        target_yaw = yaw;
+  102   1      //        target_yaw += angle;
+  103   1      //    }else{
+  104   1              target_yaw = yaw;
+  105   1      //    }
+  106   1      
+  107   1          
+  108   1      //    if(target_yaw < 0)target_yaw += 360;
+  109   1      //    else if(target_yaw > 360)target_yaw = 0;
+  110   1      
+  111   1      }
+*** WARNING C47 IN LINE 75 OF ..\USER\src\inertia.c: 'angle': unreferenced parameter
+  112          
+  113          
+  114          
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =       387     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+C251 COMPILER V5.60.0,  inertia                                                            22/11/24  22:30:25  PAGE 3   
+
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =        64     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =       116     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

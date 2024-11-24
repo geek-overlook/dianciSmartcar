@@ -1,0 +1,519 @@
+C251 COMPILER V5.60.0,  isr                                                                22/11/24  22:30:24  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE isr
+OBJECT MODULE PLACED IN .\Out_File\isr.obj
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE ..\USER\src\isr.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCD
+                    -IR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc;
+                    -..\USER\src;..\..\Libraries\seekfree_components) DEBUG PRINT(.\Out_File\isr.lst) TABS(2) OBJECT(.\Out_File\isr.obj) 
+
+stmt  level    source
+
+    1          ///******************************************************************************************************
+             -***************
+    2          // * COPYRIGHT NOTICE
+    3          // * Copyright (c) 2020,逐飞科技
+    4          // * All rights reserved.
+    5          // * 技术讨论QQ群：一群：179029047(已满)  二群：244861897(已满)  三群：824575535
+    6          // *
+    7          // * 以下所有内容版权均属逐飞科技所有，未经允许不得用于商业用途，
+    8          // * 欢迎各位使用并传播本程序，修改内容时必须保留逐飞科技的版权声明。
+    9          // *
+   10          // * @file          isr
+   11          // * @company       成都逐飞科技有限公司
+   12          // * @author        逐飞科技(QQ790875685)
+   13          // * @version       查看doc内version文件 版本说明
+   14          // * @Software      MDK FOR C251 V5.60
+   15          // * @Target core   STC32F12K
+   16          // * @Taobao        https://seekfree.taobao.com/
+   17          // * @date          2020-4-14
+   18          // ******************************************************************************************************
+             -**************/
+   19          #include "headfile.h"
+   20          #include "../inc/CCD_Driver.h"
+   21          
+   22          
+   23          
+   24          
+   25          //UART1中断
+   26          void UART1_Isr() interrupt 4
+   27          {
+   28   1          uint8 res;
+   29   1        static uint8 dwon_count;
+   30   1          if(UART1_GET_TX_FLAG)
+   31   1          {
+   32   2              UART1_CLEAR_TX_FLAG;
+   33   2              busy[1] = 0;
+   34   2          }
+   35   1          if(UART1_GET_RX_FLAG)
+   36   1          {
+   37   2              UART1_CLEAR_RX_FLAG;
+   38   2              res = SBUF;
+   39   2              //程序自动下载
+   40   2              if(res == 0x7F)
+   41   2              {
+   42   3                  if(dwon_count++ > 20)
+   43   3                      IAP_CONTR = 0x60;
+   44   3              }
+   45   2              else
+   46   2              {
+   47   3                  dwon_count = 0;
+   48   3              }
+   49   2          }
+   50   1      }
+   51          
+   52          //UART2中断
+   53          void UART2_Isr() interrupt 8
+   54          {
+   55   1          if(UART2_GET_TX_FLAG)
+C251 COMPILER V5.60.0,  isr                                                                22/11/24  22:30:24  PAGE 2   
+
+   56   1        {
+   57   2              UART2_CLEAR_TX_FLAG;
+   58   2          busy[2] = 0;
+   59   2        }
+   60   1          if(UART2_GET_RX_FLAG)
+   61   1        {
+   62   2              UART2_CLEAR_RX_FLAG;
+   63   2          //接收数据寄存器为：S2BUF
+   64   2          if(wireless_type == WIRELESS_SI24R1)
+   65   2              {
+   66   3                  wireless_uart_callback();           //无线转串口回调函数
+   67   3              }
+   68   2              else if(wireless_type == WIRELESS_CH9141)
+   69   2              {
+   70   3                  bluetooth_ch9141_uart_callback();   //蓝牙转串口回调函数
+   71   3              }
+   72   2        }
+   73   1      }
+   74          
+   75          
+   76          //UART3中断
+   77          void UART3_Isr() interrupt 17
+   78          {
+   79   1          if(UART3_GET_TX_FLAG)
+   80   1        {
+   81   2              UART3_CLEAR_TX_FLAG;
+   82   2          busy[3] = 0;
+   83   2        }
+   84   1          if(UART3_GET_RX_FLAG)
+   85   1        {
+   86   2              UART3_CLEAR_RX_FLAG;
+   87   2          //接收数据寄存器为：S3BUF
+   88   2      
+   89   2        }
+   90   1      }
+   91          
+   92          
+   93          //UART4中断
+   94          void UART4_Isr() interrupt 18
+   95          {
+   96   1          if(UART4_GET_TX_FLAG)
+   97   1        {
+   98   2              UART4_CLEAR_TX_FLAG;
+   99   2          busy[4] = 0;
+  100   2        }
+  101   1          if(UART4_GET_RX_FLAG)
+  102   1        {
+  103   2              UART4_CLEAR_RX_FLAG;
+  104   2          //接收数据寄存器为：S4BUF;
+  105   2      
+  106   2      
+  107   2        }
+  108   1      }
+  109          
+  110          #define LED P52
+  111          void INT0_Isr() interrupt 0
+  112          {
+  113   1        LED = 0;  //点亮LED
+  114   1      }
+  115          void INT1_Isr() interrupt 2
+  116          {
+  117   1      
+  118   1      }
+  119          void INT2_Isr() interrupt 10
+  120          {
+  121   1        INT2_CLEAR_FLAG;  //清除中断标志
+C251 COMPILER V5.60.0,  isr                                                                22/11/24  22:30:24  PAGE 3   
+
+  122   1      }
+  123          void INT3_Isr() interrupt 11
+  124          {
+  125   1        INT3_CLEAR_FLAG;  //清除中断标志
+  126   1      }
+  127          
+  128          void INT4_Isr() interrupt 16
+  129          {
+  130   1        INT4_CLEAR_FLAG;  //清除中断标志
+  131   1      }
+  132          
+  133          void TM0_Isr() interrupt 1
+  134          {
+  135   1      
+  136   1      }
+  137          void TM1_Isr() interrupt 3
+  138          {
+  139   1      
+  140   1      }
+  141          void TM2_Isr() interrupt 12
+  142          {
+  143   1        TIM2_CLEAR_FLAG;  //清除中断标志
+  144   1        
+  145   1      }
+  146          void TM3_Isr() interrupt 19
+  147          {
+  148   1        static uint8 TM3_Isr_count  =0;
+  149   1        static uint8 last_aim_angle_filter = 0;
+  150   1        TIM3_CLEAR_FLAG; //清除中断标志
+  151   1        
+  152   1        if(car_ready_flag){
+  153   2          
+  154   2            //读取编码器数值
+  155   2            if(DIR == 1){
+  156   3            dat = ctimer_count_read(CTIM0_P34)*5;
+  157   3            }
+  158   2            else{
+  159   3              dat = ctimer_count_read(CTIM0_P34)*5* -1;
+  160   3            }
+  161   2            //积分BEGIN状态速度，根据路程判断大小环，在圆环结束状态中置零circle_begin_distence
+  162   2            if(count_crbegin_flag == count_start)
+  163   2              circle_begin_distence += dat;
+  164   2            else if(count_crbegin_flag == count_clear){
+  165   3              circle_begin_distence = 0;
+  166   3            }
+  167   2            //坡道
+  168   2            if(count_ramp_flag == count_start)
+  169   2              ramp_distence += dat/10;
+  170   2            else if(count_ramp_flag == count_clear){
+  171   3              ramp_distence = 0;
+  172   3            }
+  173   2            //避免二次入环
+  174   2            if (count_nocri_flag == count_start){//出环岛后开始计算路程
+  175   3              circle_no_distence += dat;
+  176   3              if(circle_no_distence >= 40000){//大于一定路程停止累计
+  177   4                count_nocri_flag = count_stop;
+  178   4              }
+  179   3            }
+  180   2            //十字
+  181   2            if(count_cross_flag == count_start){
+  182   3              cross_distence += dat;
+  183   3              if(cross_distence >= 27000){//大于一定路程停止累计
+  184   4                count_cross_flag = count_stop;
+  185   4              }
+  186   3            }
+  187   2            //十字圆环检测的路程
+C251 COMPILER V5.60.0,  isr                                                                22/11/24  22:30:24  PAGE 4   
+
+  188   2            if(count_cross_cricle_flag == count_start){
+  189   3              cross_cricle_distence += (dat/10);
+  190   3              //cross_cricle_proccess中变量小于阈值去判断是否圆环十字，该范围应比函数阈值稍微大
+  191   3              if(cross_cricle_distence >= 61000 && flag_cross_circle == CROSS_CIRCLE_NONE){
+  192   4                count_cross_cricle_flag = count_stop;
+  193   4              }
+  194   3            }
+  195   2            //急弯
+  196   2            if(count_turn_pro_flag == count_start){
+  197   3              tuen_pro_distence += dat;
+  198   3              if(tuen_pro_distence >= 27000){//大于一定路程停止累计
+  199   4                count_turn_pro_flag = count_stop;
+  200   4              }
+  201   3            }
+  202   2            //二次斑马线
+  203   2            if(count_zebra_flag == count_start){
+  204   3              zebra_distence += dat;
+  205   3              if(zebra_distence >= 60000){//大于一定路程停止累计
+  206   4                count_zebra_flag = count_stop;
+  207   4              }
+  208   3            }
+  209   2      
+  210   2      
+  211   2            ctimer_count_clean(CTIM0_P34);
+  212   2      
+  213   2            if(dat > 500 && dat <= 700){        
+  214   3              motor_pid.Kp = 12 ;
+  215   3              motor_pid.Ki = 3;
+  216   3            }
+  217   2            else if(dat > 700 ){
+  218   3              motor_pid.Kp = 13.5;
+  219   3              motor_pid.Ki = 3.9;
+  220   3            }
+  221   2            else if(dat <=500 ){
+  222   3              motor_pid.Kp = 6.1;
+  223   3              motor_pid.Ki = 2.7;
+  224   3            }
+  225   2            //电机pid计算
+  226   2            motor_pwm_out = PosPID_realize(&motor_pid,dat);
+  227   2            
+  228   2          
+  229   2          //根据标志位停车
+  230   2          if((P44 == 1 && flag_ramp == RAMP_NONE && zebra_distence > 50000)|| dl1b_distance_mm < 200 ){
+  231   3            process_flag = 0;
+  232   3          }
+  233   2          //丢线保护
+  234   2          if(!process_flag){
+  235   3            // motor_pwm_out = 0;
+  236   3            motor_pid.target_val = (float)0;
+  237   3            aim_angle_filter = 0;
+  238   3            // P32 = 0;
+  239   3          }
+  240   2          if(car_ready_gogogo){//允许发车
+  241   3            if(dat > 50){
+  242   4              pwm_duty(PWMB_CH1_P00, 800);//电调
+  243   4              pwm_duty(PWMB_CH2_P01, 800);//电调
+  244   4            }else {
+  245   4              pwm_duty(PWMB_CH1_P00, 0);//电调
+  246   4              pwm_duty(PWMB_CH2_P01, 0);//电调
+  247   4            }
+  248   3            //电机限幅
+  249   3            // if(dat < 100)limit_motor_pwm = 1000;
+  250   3            // else limit_motor_pwm = 4000;
+  251   3            limit_motor_pwm = 4000;
+  252   3            if(motor_pwm_out >= limit_motor_pwm)motor_pwm_out = limit_motor_pwm;
+  253   3            if(motor_pwm_out <= -limit_motor_pwm)motor_pwm_out = -limit_motor_pwm;
+C251 COMPILER V5.60.0,  isr                                                                22/11/24  22:30:24  PAGE 5   
+
+  254   3            if(motor_pwm_out <= limit_motor_pwm&&motor_pwm_out >= 0){//正转
+  255   4              pwm_duty(PWMA_CH3P_P24, motor_pwm_out);//电机
+  256   4              P26 = 0;
+  257   4            }
+  258   3            if(motor_pwm_out < 0&&motor_pwm_out >= -limit_motor_pwm){//反转
+  259   4              pwm_duty(PWMA_CH3P_P24, -motor_pwm_out);//电机
+  260   4              P26 = 1;
+  261   4            }
+  262   3          }
+  263   2      
+  264   2      
+  265   2          if(flag_ramp != RAMP_NONE && (aim_angle_filter >5 || aim_angle_filter < -5))
+  266   2            aim_angle_filter = last_aim_angle_filter;
+  267   2      
+  268   2          offset_r_x = X_gyro;
+  269   2          offset_r_d = dat;
+  270   2          if(offset_r_x < 0)offset_r_x = -offset_r_x;
+  271   2          if(offset_r_d < 0)offset_r_d = -offset_r_d;
+  272   2      
+  273   2          offset_r = offset_r_x / offset_r_d * 54.f;
+  274   2          if(offset_r < 0) offset_r = -offset_r;
+  275   2      
+  276   2          inertia_pid.target_val = 20;
+  277   2          steer_pid.target_val = aim_angle_filter;
+  278   2          steer_pwm_out = (int)(PosPID_realize( &steer_pid , 0 ) + steet_midlle);
+  279   2      
+  280   2          // steer_pwm_out = (int)(-pid_realize_a(-offset_inertia, 0.0f, steer_pid.Kp, steer_pid.Kd) + steet_midl
+             -le);
+  281   2      
+  282   2          last_aim_angle_filter = aim_angle_filter;
+  283   2      
+  284   2        }
+  285   1      
+  286   1            
+  287   1            
+  288   1            
+  289   1        if(process_flag){
+  290   2      //!!!!!!!!!!!!!!!!!!勿改!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  291   2        if(steer_pwm_out >= 798)steer_pwm_out = 798;
+  292   2        if(steer_pwm_out <= 453)steer_pwm_out = 453;
+  293   2        pwm_duty(PWMB_CH3_P33, steer_pwm_out);//舵机
+  294   2      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  295   2        }else {
+  296   2          pwm_duty(PWMB_CH3_P33, steet_midlle);//舵机
+  297   2        }
+  298   1        
+  299   1      }
+  300          extern void pit_callback(void);
+  301          void TM4_Isr() interrupt 20
+  302          {
+  303   1        TIM4_CLEAR_FLAG; //清除中断标志 
+  304   1        
+  305   1        //读取tof数值
+  306   1      
+  307   1        dl1b_get_distance();
+  308   1        if(dl1b_finsh_flag){
+  309   2          dl1b_finsh_flag = 0;
+  310   2        }
+  311   1      
+  312   1      
+  313   1      
+  314   1      ///////////////陀螺仪//////////////////
+  315   1        imu660ra_get_gyro();
+  316   1          //去零漂
+  317   1          // imu660ra_gyro_x -= 1.2;
+  318   1        X_gyro = imu660ra_gyro_transition(imu660ra_gyro_x);
+C251 COMPILER V5.60.0,  isr                                                                22/11/24  22:30:24  PAGE 6   
+
+  319   1        Y_gyro = imu660ra_gyro_transition(imu660ra_gyro_y);
+  320   1        Z_gyro = imu660ra_gyro_transition(imu660ra_gyro_z);
+  321   1      
+  322   1      //低通滤波
+  323   1          // if(X_gyro<2&&X_gyro>-2){
+  324   1          //     X_gyro=0;
+  325   1          // }
+  326   1      
+  327   1          yaw += Z_gyro *0.005;                               //积分偏航角
+  328   1          if(yaw<0)yaw+=360;
+  329   1          else if(yaw>360)yaw=0;
+  330   1      
+  331   1      //惯性导航（直线）
+  332   1        get_inertia_offset();
+  333   1      
+  334   1      ///////////////ccd//////////////////
+  335   1        //CCD采集数据
+  336   1        ccd_collect();   
+  337   1        
+  338   1        ccd_value1 = ccd_threshold(ccd_data_ch1);
+  339   1        ccd_value2 = ccd_threshold(ccd_data_ch2);
+  340   1        
+  341   1        if((flag_cross != CROSS_NONE) || (flag_circle != CIRCLE_NONE))ccd_value2 = element_ccd_value;
+  342   1        else {element_ccd_value = ccd_value2;}
+  343   1        
+  344   1        ccd_two_value(ccd_value2, ccd_value2);
+  345   1        Bin_CCD_Filter();
+  346   1        //最大白线宽度计算
+  347   1        count_ones_ccd1 = count_ones(ccd_data_01,128);
+  348   1        count_ones_ccd2 = count_ones(ccd_data_02,128);
+  349   1      
+  350   1      
+  351   1        if(car_ready_flag){//允许发车后元素检测
+  352   2          //坡道
+  353   2          if(dl1b_distance_mm < 500 && flag_ramp == RAMP_NONE && flag_circle == CIRCLE_NONE && ramp_check){
+  354   3            count_ramp_flag = count_start;
+  355   3            flag_ramp = RAMP_IN_UP;
+  356   3            get_target_yaw(offset2);
+  357   3            //test0 = 1;
+  358   3          }
+  359   2          else if(flag_ramp == RAMP_IN_UP && dl1b_distance_mm > 1000){
+  360   3            ramp_distence = 0;
+  361   3            count_ramp_flag = count_start;
+  362   3            flag_ramp = RAMP_IN_MID;
+  363   3            //test0 = 2;
+  364   3          }
+  365   2          else if(flag_ramp == RAMP_IN_MID && dl1b_distance_mm < 490){
+  366   3            ramp_distence = 0;
+  367   3            count_ramp_flag = count_start;
+  368   3            flag_ramp = RAMP_IN_DOWN;
+  369   3            //test0 = 3;
+  370   3          }
+  371   2          else if(flag_ramp == RAMP_IN_DOWN && dl1b_distance_mm > 570){
+  372   3            flag_ramp = RAMP_NONE;
+  373   3            count_ramp_flag = count_clear;
+  374   3            //test0 = 4;
+  375   3          }
+  376   2          else if(ramp_distence > 10000){
+  377   3            flag_ramp = RAMP_NONE;
+  378   3            count_ramp_flag = count_clear;
+  379   3            //test0 = 0;
+  380   3          }
+  381   2      
+  382   2        //十字判断
+  383   2          if(((count_ones_ccd1>89 && count_ones_ccd2 < 70) || 
+  384   2            (count_ones_ccd2 > 105 && count_ones_ccd1 < 50)) && 
+C251 COMPILER V5.60.0,  isr                                                                22/11/24  22:30:24  PAGE 7   
+
+  385   2            flag_ramp == RAMP_NONE && 
+  386   2          flag_circle != CIRCLE_LEFT_IN && flag_circle != CIRCLE_LEFT_OUT&&
+  387   2          flag_circle != CIRCLE_LEFT_RUNNING && flag_circle != CIRCLE_LEFT_END && 
+  388   2          flag_circle != CIRCLE_RIGHT_IN && flag_circle != CIRCLE_RIGHT_OUT&&
+  389   2          flag_circle != CIRCLE_RIGHT_RUNNING && flag_circle != CIRCLE_RIGHT_END &&
+  390   2          flag_cross_circle == CROSS_CIRCLE_NONE && cross_check)
+  391   2          {
+  392   3            count_cross_cricle_flag = count_start;//一段路程内判断十字圆环
+  393   3            cross_cricle_distence = 0;
+  394   3            count_cross_flag = count_start;
+  395   3            cross_distence = 0;
+  396   3            cross_circle_yaw = yaw;//记录进十字圆环的角度
+  397   3            flag_cross = CROSS_RUNNING;
+  398   3          }
+  399   2        //十字圆环
+  400   2          if(cross_circle_cleck){
+  401   3            cross_cricle_proccess();
+  402   3          }
+  403   2        //s弯特殊处理，抑制连续拐急弯
+  404   2          if(flag_ramp == RAMP_NONE && flag_cross_circle == CROSS_CIRCLE_NONE && flag_cross == CROSS_NONE && flag
+             -_circle == CIRCLE_NONE )//不在任何一个元素
+  405   2          {
+  406   3            //连续处于同一个方向的偏差值，记录初始角度，偏差值不同方向则刷新角度
+  407   3            if(last_offset > 10 && offset2 > 10){//左正右负
+  408   4              turn_pro_flag = 1;
+  409   4            }
+  410   3            else if(last_offset < -10 && offset2 < -10){
+  411   4              turn_pro_flag = 0;
+  412   4            }
+  413   3            else {
+  414   4              turn_pro_yaw = yaw;
+  415   4            }
+  416   3      
+  417   3            if(yaw_error(turn_pro_yaw,turn_pro_flag) > 170 && flag_turn_pro ==0){
+  418   4              cross_distence = 0;
+  419   4              count_turn_pro_flag = count_start;
+  420   4              flag_turn_pro = 1;
+  421   4            }
+  422   3            if(cross_distence > 25000){
+  423   4              flag_turn_pro = 0;
+  424   4            }
+  425   3          }else{
+  426   3            flag_turn_pro = 0;
+  427   3          }
+  428   2        }
+  429   1      
+  430   1      
+  431   1      
+  432   1      ///////////////控制//////////////////
+  433   1        get_mid_point1();//ccd1 mid
+  434   1        get_mid_point2();//ccd2 mid
+  435   1        
+  436   1        last_left_point1 = left_point1;
+  437   1        last_right_point1 = right_point1;
+  438   1      
+  439   1        get_offset();//计算误差  offset+向左打角  -向右打角 
+  440   1        last_count_ones_ccd1 = count_ones_ccd1;
+  441   1        last_count_ones_ccd2 = count_ones_ccd2;
+  442   1      }
+  443          
+  444          //void  INT0_Isr()  interrupt 0;
+  445          //void  TM0_Isr()   interrupt 1;
+  446          //void  INT1_Isr()  interrupt 2;
+  447          //void  TM1_Isr()   interrupt 3;
+  448          //void  UART1_Isr() interrupt 4;
+  449          //void  ADC_Isr()   interrupt 5;
+C251 COMPILER V5.60.0,  isr                                                                22/11/24  22:30:24  PAGE 8   
+
+  450          //void  LVD_Isr()   interrupt 6;
+  451          //void  PCA_Isr()   interrupt 7;
+  452          //void  UART2_Isr() interrupt 8;
+  453          //void  SPI_Isr()   interrupt 9;
+  454          //void  INT2_Isr()  interrupt 10;
+  455          //void  INT3_Isr()  interrupt 11;
+  456          //void  TM2_Isr()   interrupt 12;
+  457          //void  INT4_Isr()  interrupt 16;
+  458          //void  UART3_Isr() interrupt 17;
+  459          //void  UART4_Isr() interrupt 18;
+  460          //void  TM3_Isr()   interrupt 19;
+  461          //void  TM4_Isr()   interrupt 20;
+  462          //void  CMP_Isr()   interrupt 21;
+  463          //void  I2C_Isr()   interrupt 24;
+  464          //void  USB_Isr()   interrupt 25;
+  465          //void  PWM1_Isr()  interrupt 26;
+  466          //void  PWM2_Isr()  interrupt 27;
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =      2413     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =         4     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =        10     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

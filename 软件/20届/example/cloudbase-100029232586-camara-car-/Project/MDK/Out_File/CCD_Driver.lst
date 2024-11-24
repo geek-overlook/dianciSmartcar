@@ -1,0 +1,595 @@
+C251 COMPILER V5.60.0,  CCD_Driver                                                         22/11/24  22:30:24  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE CCD_Driver
+OBJECT MODULE PLACED IN .\Out_File\CCD_Driver.obj
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE ..\USER\src\CCD_Driver.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROW
+                    -SE INCDIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\US
+                    -ER\inc;..\USER\src;..\..\Libraries\seekfree_components) DEBUG PRINT(.\Out_File\CCD_Driver.lst) TABS(2) OBJECT(.\Out_File
+                    -\CCD_Driver.obj) 
+
+stmt  level    source
+
+    1          #include "CCD_Driver.h"
+    2          
+    3          uint16 ccd_data_01[128] = {0};
+    4          uint16 ccd_data_02[128] = {0};
+    5          //最大白线宽度
+    6          uint8 count_ones_ccd1 = 0;
+    7          uint8 count_ones_ccd2 = 0;
+    8          uint8 last_count_ones_ccd1 = 0;
+    9          uint8 last_count_ones_ccd2 = 0;
+   10          uint8  ccd1_l_loss = 0;
+   11          uint8  ccd1_r_loss = 0;
+   12          uint8  ccd2_l_loss = 0;
+   13          uint8  ccd2_r_loss = 0;
+   14          uint8 circle_sideline_count = 0;
+   15          uint8 circle_distance = 0;
+   16          uint8 circle_count = 0;  //环岛状态计次
+   17          uint8 circle_left_in_flag = 0;//入环
+   18          uint8 circle_right_in_flag = 0;
+   19          uint8 circle_left_out_flag = 0;//出环
+   20          uint8 circle_right_out_flag = 0;
+   21          uint8 circle_left_out = 0;//出环
+   22          uint8 ccd1_circle_left_out = 0;//出环
+   23          
+   24          
+   25          uint16 ccd1_w_count = 0;
+   26          uint16 ccd2_w_count = 0;
+   27          uint8 ccd_select = 0;
+   28          uint8 l_circle_max = 0; //环岛曲线最大点
+   29          uint8 last_left_point1 = 0;  //上一次的左边线点
+   30          uint8 last_right_point1 = 0;  //上一次的右边线点
+   31          uint8 last_left_point2 = 0;  //上一次的左边线点
+   32          uint8 last_right_point2 = 0;  //上一次的右边线点
+   33          int8 offset1=0;//误差
+   34          int8 offset2=0;//误差
+   35          int8 last_offset=0;//上一次偏差值
+   36          int8 offset_inertia=0;//编码器计算的误差
+   37          float aim_angle_filter = 0;
+   38          int8 last_offset2 = 0;
+   39          uint8 zebra_count_stop =0;
+   40          uint16 ccd_value1 = 0;
+   41          uint16 ccd_value2 = 0;
+   42          uint8 Now_left_point2 = 0;
+   43          uint8 Now_right_point2 = 0;
+   44          uint8 tof_enable = 1;
+   45          int8 offset_weight = 0;
+   46          uint16 element_ccd_value = 0;
+   47          
+   48          
+   49          ////////////////////////////////////控制////////////////////////////////////
+   50          //分段pid
+   51          uint32 inertia_kp = 5;
+   52          uint32 inertia_kd = 10;
+   53          uint32 turn_kp = 9;
+   54          uint32 turn_kd = 30;
+   55          //速度
+   56          uint16 speed_turn = 840;//700
+C251 COMPILER V5.60.0,  CCD_Driver                                                         22/11/24  22:30:24  PAGE 2   
+
+   57          uint16 speed_cross = 800;//700
+   58          uint16 speed_ramp = 600;
+   59          uint16 speed_stright = 1150;//1000
+   60          int16  limit_motor_pwm = 0;
+   61          
+   62          
+   63          /////////////////////////////////元素检测标志位//////////////////////////////
+   64          uint8 circle_left_check = 0 ;
+   65          uint8 circle_left_big_check = 0 ;
+   66          uint8 circle_right_check = 0 ;
+   67          uint8 cross_check = 0 ;
+   68          uint8 cross_circle_cleck = 0;
+   69          uint8 ramp_check = 0 ;
+   70          uint8 zebra_flag = 0 ;//置1才开始检测斑马线并停车
+   71          
+   72          enum flag_circle_e flag_circle=0;
+   73          enum flag_cross_circle_e flag_cross_circle=0;
+   74          enum flag_ramp_e flag_ramp = 0;
+   75          enum flag_cross_e flag_cross = 0;
+   76          
+   77          uint16 ccd_threshold(uint16 ccd_data[])
+   78          {
+   79   1        uint16 i;
+   80   1        uint16 value1_max, value1_min;
+   81   1        uint16 CCD_Threshold = 0;
+   82   1      
+   83   1          value1_max = ccd_data[0];      // 动态阈值算法，读取最大和最小值
+   84   1          for (i = 5; i < 123; i++) // 两边各去掉5个点
+   85   1          {
+   86   2              if (value1_max <= ccd_data[i])
+   87   2                  value1_max = ccd_data[i];
+   88   2          }
+   89   1          value1_min = ccd_data[0]; // 最小值
+   90   1          for (i = 5; i < 123; i++)
+   91   1          {
+   92   2              if (value1_min >= ccd_data[i])
+   93   2                  value1_min = ccd_data[i];
+   94   2          }
+   95   1          CCD_Threshold = (value1_max + value1_min) / 2; // 计算出本次中线提取的阈值  
+   96   1        return CCD_Threshold;
+   97   1      }
+   98          
+   99          //计算ccd突变点数量，检测斑马线
+  100          uint16 zebra_stop(uint16 arr[], uint16 n) {
+  101   1        int8 i;
+  102   1        uint16 count = 0;
+  103   1        uint16 prev = arr[0]; // 记录上一个元素的值 
+  104   1        if (n <= 0) {
+  105   2          return 0; // 数组长度必须大于0
+  106   2        }
+  107   1        for ( i = 1; i < n; ++i) {
+  108   2          if (arr[i] != prev) {
+  109   3            count++; // 遇到跳变则计数加1
+  110   3          }
+  111   2          prev = arr[i];
+  112   2        }
+  113   1      
+  114   1        return count;
+  115   1      }
+  116          
+  117          
+  118          
+  119          void ccd_two_value(uint16 value1, uint16 value2)//ccd数据二值化  黑点为0，白点为1   value 300左右
+  120          {
+  121   1        uint8 i=0;
+  122   1        uint16 temp_num1=0;
+C251 COMPILER V5.60.0,  CCD_Driver                                                         22/11/24  22:30:24  PAGE 3   
+
+  123   1        uint16 temp_num2=0;
+  124   1        ccd1_w_count = 0;
+  125   1          ccd2_w_count = 0;
+  126   1        
+  127   1        for( i=0;i<128;i++)
+  128   1        {
+  129   2          //2:ccd_data_ch2[i] 1:
+  130   2          temp_num1=ccd_data_ch1[i];
+  131   2            temp_num2=ccd_data_ch2[i];
+  132   2          
+  133   2          if(temp_num1>value1){ccd_data_01[i]=1;ccd1_w_count++;}//白点为1
+  134   2          else               {ccd_data_01[i]=0;}//黑点为0
+  135   2          
+  136   2          if(temp_num2>value2){ccd_data_02[i]=1;ccd2_w_count++;}//白点为1
+  137   2          else               {ccd_data_02[i]=0;}//黑点为0
+  138   2        }
+  139   1      }
+  140          
+  141          //【2】点集滤波
+  142          void Bin_CCD_Filter()
+  143          {
+  144   1        uint16 i = 0;
+  145   1        for(i = 1; i < ccd1_w_count; i++)
+  146   1        {
+  147   2          if(ccd_data_01[i] == 1 && ccd_data_01[i-1] == 0 && ccd_data_01[i+1] == 0)ccd_data_01[i] = 0;
+  148   2          else if(ccd_data_01[i] == 0 && ccd_data_01[i-1] == 1 && ccd_data_01[i+1] == 1)ccd_data_01[i] = 1;
+  149   2        }
+  150   1        
+  151   1        for(i = 1; i < ccd2_w_count; i++)
+  152   1        {
+  153   2          if(ccd_data_02[i] == 1 && ccd_data_02[i-1] == 0 && ccd_data_02[i+1] == 0)ccd_data_02[i] = 0;
+  154   2          else if(ccd_data_02[i] == 0 && ccd_data_02[i-1] == 1 && ccd_data_02[i+1] == 1)ccd_data_02[i] = 1;
+  155   2        } 
+  156   1      }
+  157          
+  158          uint16 myabs(int16 number)//绝对值函数
+  159          {
+  160   1        static uint16 abs_number=0;
+  161   1         
+  162   1        if( number>=0)abs_number=number;
+  163   1        else abs_number=-number;
+  164   1      
+  165   1        return abs_number;
+  166   1      
+  167   1      }
+  168          
+  169          uint8 left_point1 =   0;//ccd1左边点
+  170          uint8 right_point1= 127;//ccd1右边点
+  171          uint8 mid_point1  =  64;//ccd1中点
+  172          
+  173          uint8 left_point2 =   0;//ccd2左边点
+  174          uint8 right_point2= 127;//ccd2右边点
+  175          uint8 mid_point2  =  64;//ccd2中点
+  176          uint8 last_mid_point2=64;
+  177          
+  178          void get_mid_point1(void)//计算ccd1得中点
+  179           {
+  180   1        static uint8 last_mid_point1=64;
+  181   1        uint8 l_point1=0;
+  182   1        uint8 r_point1=0;
+  183   1        ccd1_circle_left_out = 0;
+  184   1        for( l_point1=last_mid_point1;l_point1>0;l_point1--)//搜索左边点，以上次中点作为这次的起搜点
+  185   1        {
+  186   2          if(ccd_data_01[l_point1-1]==0&&ccd_data_01[l_point1]==0)//找到连续两个黑点
+  187   2          {
+  188   3            left_point1=l_point1;
+C251 COMPILER V5.60.0,  CCD_Driver                                                         22/11/24  22:30:24  PAGE 4   
+
+  189   3            break;//找到左边点退出循环
+  190   3            }
+  191   2            else if(l_point1==1)//找不到左边点
+  192   2            {
+  193   3              ccd1_l_loss++;
+  194   3              left_point1=0;//以0作为左边点
+  195   3            break;//退出循环
+  196   3            }
+  197   2        }
+  198   1        for( r_point1=last_mid_point1;r_point1<127;r_point1++)//搜索右边点，以上次中点作为这次的起搜点
+  199   1        {
+  200   2          if(ccd_data_01[r_point1+1]==0&&ccd_data_01[r_point1]==0)//找到连续两个黑点
+  201   2            {
+  202   3              right_point1=r_point1;
+  203   3              break;//找到右边点退出循环
+  204   3            }
+  205   2          else if(r_point1==126)//找不到右边点
+  206   2            {
+  207   3              ccd1_r_loss++;
+  208   3            right_point1=127;//以127作为右边点
+  209   3            break;//退出循环
+  210   3            }
+  211   2          }
+  212   1      
+  213   1      
+  214   1        // //找线失败，进入第二次找线
+  215   1        // if((right_point1-left_point1)<=1 && count_ones_ccd1>5 ){
+  216   1        //  //情况1：白线只有一段
+  217   1        //  if(zebra_stop(ccd_data_01,128) <= 2){
+  218   1        //    //找左线
+  219   1        //    //白线在最左边
+  220   1        //    if(ccd_data_01[0]==1){
+  221   1        //      left_point1 = 0;
+  222   1        //    }
+  223   1        //    //白线不在最左边，找黑变白的点
+  224   1        //    else{
+  225   1        //      for(l_point1 = 1 ; l_point1<128 ; l_point1++){
+  226   1        //        if(ccd_data_01[l_point1-1]==0 && ccd_data_01[l_point1]==1){
+  227   1        //          left_point1 = l_point1;
+  228   1        //          break;
+  229   1        //        }
+  230   1        //      }
+  231   1        //    }
+  232   1      
+  233   1        //    //找右线
+  234   1        //    if(ccd_data_01[127]==1){
+  235   1        //      right_point1 = 127;
+  236   1        //    }
+  237   1        //    //白线不在最右边，找黑变白的点
+  238   1        //    else{
+  239   1        //      for(r_point1 = 126 ; r_point1>0 ; r_point1--){
+  240   1        //        if(ccd_data_01[r_point1+1]==0 && ccd_data_01[r_point1]==1){
+  241   1        //          right_point1 = r_point1;
+  242   1        //          break;
+  243   1        //        }
+  244   1        //      }
+  245   1        //    }
+  246   1        //  }
+  247   1        // }
+  248   1        
+  249   1      
+  250   1        
+  251   1              //    LimitL(left_point1);//左边点限幅
+  252   1          //    LimitH(right_point1);//右边点限幅
+  253   1      
+  254   1      
+C251 COMPILER V5.60.0,  CCD_Driver                                                         22/11/24  22:30:24  PAGE 5   
+
+  255   1      
+  256   1          //消除进圆环的前摇,只能消除直道圆环
+  257   1          if((Now_right_point2 -right_point1 >5) && (Now_right_point2 -right_point1 <15) && //右边为直线
+  258   1          ((count_ones_ccd1 < 55 && count_ones_ccd2 > 75 )||//ccd2丢线 ccd1不丢线
+  259   1          (count_ones_ccd1 > 68 && count_ones_ccd2 < 53 ))&&//ccd1丢线 ccd2不丢线
+  260   1          flag_ramp == RAMP_NONE && flag_cross_circle == CROSS_CIRCLE_NONE && flag_circle == CIRCLE_NONE && flag_
+             -cross == CROSS_NONE//不在任何一个元素
+  261   1          ){
+  262   2            left_point1 = right_point1 - 30;
+  263   2          }
+  264   1      
+  265   1          if((left_point1 - Now_left_point2 >5) && (left_point1 - Now_left_point2 <15) && //左边为直线
+  266   1          (count_ones_ccd1 < 55 && count_ones_ccd2 > 75 )||//ccd2丢线 ccd1不丢线
+  267   1          (count_ones_ccd1 > 68 && count_ones_ccd2 < 53 )&&//ccd1丢线 ccd2不丢线
+  268   1          flag_ramp == RAMP_NONE && flag_cross_circle == CROSS_CIRCLE_NONE && flag_circle == CIRCLE_NONE && flag_
+             -cross == CROSS_NONE//不在任何一个元素
+  269   1          ){
+  270   2            right_point1 = left_point1 + 30;
+  271   2          }
+  272   1          
+  273   1          if(myabs(last_mid_point1- mid_point1)<20)
+  274   1          {
+  275   2            mid_point1=(left_point1+right_point1)/2;
+  276   2          
+  277   2          }
+  278   1          
+  279   1          else//过十字时防止因为车身摆动导致误差过大误差过大，以上次中点作为这次中点
+  280   1            
+  281   1          {
+  282   2          mid_point1=last_mid_point1;//过十字时防止因为车身摆动导致误差过大，以上次中点作为这次中点
+  283   2          
+  284   2          }
+  285   1          
+  286   1          if(myabs(last_mid_point1- mid_point1) == 127)ccd1_circle_left_out = 1;
+  287   1          last_mid_point1= mid_point1;//以这次中点作为下次的上次中点，并作为起搜点
+  288   1      }
+  289          
+  290          void get_mid_point2(void)//计算ccd2得中点
+  291          {
+  292   1      
+  293   1        uint8 l_point2=0;
+  294   1        uint8 r_point2=0;
+  295   1        static uint8 running_count;
+  296   1        //搜索左边点，以上次中点作为这次的起搜点
+  297   1        for( l_point2=last_mid_point2;l_point2>0;l_point2--){
+  298   2          //找到连续两个黑点
+  299   2          if(ccd_data_02[l_point2-1]==0&&ccd_data_02[l_point2]==0){
+  300   3            left_point2=l_point2;
+  301   3            break;//找到左边点退出循环
+  302   3          }
+  303   2          //找不到左边点
+  304   2          else if(l_point2==7){
+  305   3            left_point2=0;//以0作为左边点
+  306   3            ccd2_l_loss++;
+  307   3            break;//退出循环
+  308   3          }
+  309   2        }
+  310   1        //搜索右边点，以上次中点作为这次的起搜点
+  311   1        for( r_point2=last_mid_point2;r_point2<127;r_point2++){
+  312   2          //找到连续两个黑点
+  313   2          if(ccd_data_02[r_point2+1]==0&&ccd_data_02[r_point2]==0){
+  314   3            right_point2=r_point2;
+  315   3            break;//找到右边点退出循环
+  316   3          }
+  317   2          //找不到右边点
+  318   2          else if(r_point2==120){
+C251 COMPILER V5.60.0,  CCD_Driver                                                         22/11/24  22:30:24  PAGE 6   
+
+  319   3            right_point2=120;//以127作为右边点
+  320   3            ccd2_r_loss++ ;
+  321   3            break;//退出循环
+  322   3          }
+  323   2        }
+  324   1        Now_left_point2 = left_point2;
+  325   1        Now_right_point2 = right_point2;
+  326   1      
+  327   1        //圆环
+  328   1        cricle_proccess();
+  329   1      
+  330   1        //消除进圆环的前摇,只能消除直道圆环
+  331   1        if((Now_right_point2 -right_point1 >5) && (Now_right_point2 -right_point1 <15) && //右边为直线
+  332   1        ((count_ones_ccd1 < 55 && count_ones_ccd2 > 75 )||//ccd2丢线 ccd1不丢线
+  333   1        (count_ones_ccd1 > 68 && count_ones_ccd2 < 53 ))&&//ccd1丢线 ccd2不丢线
+  334   1        flag_ramp == RAMP_NONE && flag_cross_circle == CROSS_CIRCLE_NONE && flag_circle == CIRCLE_NONE && flag_c
+             -ross == CROSS_NONE//不在任何一个元素
+  335   1        ){
+  336   2          left_point2 = right_point2 - 51;
+  337   2        }
+  338   1      
+  339   1        if((left_point1 - Now_left_point2 >5) && (left_point1 - Now_left_point2 <15) && //右边为直线
+  340   1        ((count_ones_ccd1 < 55 && count_ones_ccd2 > 75 )||//ccd2丢线 ccd1不丢线
+  341   1        (count_ones_ccd1 > 68 && count_ones_ccd2 < 53 ))&&//ccd1丢线 ccd2不丢线
+  342   1        flag_ramp == RAMP_NONE && flag_cross_circle == CROSS_CIRCLE_NONE && flag_circle == CIRCLE_NONE && flag_c
+             -ross == CROSS_NONE//不在任何一个元素
+  343   1        ){
+  344   2          right_point2 = left_point2 + 51;
+  345   2        }
+  346   1      
+  347   1        
+  348   1      
+  349   1        last_right_point2 = right_point2;
+  350   1        LimitL(left_point2);//左边点限幅
+  351   1        LimitH(right_point2);//右边点限幅
+  352   1      
+  353   1      
+  354   1        if(myabs(last_mid_point2- mid_point2)<20){
+  355   2          mid_point2=(left_point2+right_point2)/2;
+  356   2        }
+  357   1        else{//过十字时防止因为车身摆动导致误差过大误差过大，以上次中点作为这次中点
+  358   2          mid_point2=last_mid_point2;//过十字时防止因为车身摆动导致误差过大，以上次中点作为这次中点
+  359   2        }
+  360   1          last_mid_point2= mid_point2;//以这次中点作为下次的上次中点，并作为起搜点
+  361   1      }
+  362          
+  363          
+  364          //计算误差
+  365          void get_offset(void){
+  366   1      
+  367   1        last_offset = offset2;
+  368   1        offset1 = 64 - mid_point1;
+  369   1        offset2 = 64 - mid_point2;
+  370   1        if(((offset2 > 0 && offset1 < 0) || (offset2 < 0 && offset1 > 0)) && count_ones_ccd1 > 34){
+  371   2          offset_weight = offset1*0.6 + offset2*0.1;
+  372   2        }else{
+  373   2          offset_weight = offset1*0.4 + offset2*0.7;
+  374   2        }
+  375   1        
+  376   1        KP_get(offset_weight);
+  377   1        
+  378   1        //if(flag_ramp != RAMP_NONE && flag_circle == CIRCLE_NONE){offset2 = 0;}
+  379   1      //  if(circle_left_out_flag == 1 )offset2 = calc_ave(circle_run_point,20);
+  380   1        if(!process_flag){
+  381   2          motor_pwm_out = 0;//丢线保护
+  382   2          motor_pid.target_val = (float)0;
+C251 COMPILER V5.60.0,  CCD_Driver                                                         22/11/24  22:30:24  PAGE 7   
+
+  383   2        }else if(0){//惯导测试
+  384   2          motor_pid.target_val = (float)440;
+  385   2          steer_pid.Kp=inertia_kp;
+  386   2          steer_pid.Kd = inertia_kd;
+  387   2        }
+  388   1        else if(flag_circle == CIRCLE_LEFT_BEGIN || flag_circle == CIRCLE_RIGHT_BEGIN)
+  389   1        {
+  390   2          motor_pid.target_val = (float)780;
+  391   2          steer_pid.Kp=5;
+  392   2          steer_pid.Kd = 17;
+  393   2        }
+  394   1        //小圆环环内
+  395   1        else if((flag_circle == CIRCLE_LEFT_RUNNING || flag_circle == CIRCLE_RIGHT_RUNNING) && distance_saw <= 4
+             -5000){
+  396   2          motor_pid.target_val = (float)900;
+  397   2          steer_pid.Kp= turn_kp;        //steer_pid.Kp=KP;
+  398   2          steer_pid.Kd = turn_kd ;      //steer_pid.Kd = KP *3;
+  399   2          
+  400   2        }
+  401   1        //大圆环环内
+  402   1        else if((flag_circle == CIRCLE_LEFT_IN || flag_circle == CIRCLE_LEFT_RUNNING || flag_circle == CIRCLE_RI
+             -GHT_RUNNING) && distance_saw > 45000){
+  403   2          motor_pid.target_val = (float)920;
+  404   2          steer_pid.Kp=5;
+  405   2          steer_pid.Kd = 17;
+  406   2        }
+  407   1        //坡道
+  408   1        else if(flag_ramp != RAMP_NONE){
+  409   2          motor_pid.target_val = (float)speed_ramp;
+  410   2          steer_pid.Kp = inertia_kp;
+  411   2          steer_pid.Kd = inertia_kd;
+  412   2          // P32 = 1;
+  413   2        }
+  414   1        //十字
+  415   1        else if(flag_cross == CROSS_RUNNING){
+  416   2          motor_pid.target_val = (float)speed_stright;
+  417   2      //    // P32 = 1;
+  418   2        }
+  419   1        else if(flag_cross == CROSS_MID){
+  420   2          motor_pid.target_val = (float)speed_stright;
+  421   2          steer_pid.Kp = inertia_kp;
+  422   2          steer_pid.Kd = inertia_kd;
+  423   2      //    P32 = 0;
+  424   2        }
+  425   1        //直道
+  426   1        else if( (Now_right_point2-Now_left_point2) > 48 && (Now_right_point2-Now_left_point2)<=54 
+  427   1        && offset2 > -22 && offset2 <22 
+  428   1        /*&&flag_circle == CIRCLE_NONE*/ && flag_ramp == RAMP_NONE){
+  429   2          motor_pid.target_val = (float)speed_stright;
+  430   2          steer_pid.Kp=5;
+  431   2          steer_pid.Kd = 17;
+  432   2      //    P32 = 0;
+  433   2        }
+  434   1        //高速弯道
+  435   1        else if(offset2 > 25 || offset2 < -25 ){
+  436   2          motor_pid.target_val = (float)750;
+  437   2          steer_pid.Kp=KP;
+  438   2          steer_pid.Kd=KP *3.2;
+  439   2      //    P32 = 0;
+  440   2        }
+  441   1        //弯道
+  442   1        else{
+  443   2          motor_pid.target_val = (float)speed_turn;
+  444   2          steer_pid.Kp=KP;
+  445   2          steer_pid.Kd=KP *3.2;
+  446   2      //    P32 = 0;
+C251 COMPILER V5.60.0,  CCD_Driver                                                         22/11/24  22:30:24  PAGE 8   
+
+  447   2        }
+  448   1      
+  449   1      
+  450   1      
+  451   1      //////////////////////////巡线方式切换//////////////////////////
+  452   1        if(
+  453   1          flag_circle != CIRCLE_NONE || flag_cross == CROSS_NONE 
+  454   1          //不是打固定角度和惯导情况
+  455   1          && flag_ramp != RAMP_NONE && !offset_keep_flag
+  456   1          && flag_cross_circle != CROSS_CIRCLE_OUT
+  457   1          ){
+  458   2          aim_angle_filter = offset2;
+  459   2          // P32 = 0;
+  460   2        }
+  461   1        else 
+  462   1        {
+  463   2          //ccd1丢线了用纯ccd2寻迹
+  464   2          if(right_point1-left_point1 == 0){
+  465   3            aim_angle_filter = offset2*1.2;
+  466   3            // P32 = 0;
+  467   3          }
+  468   2          else {
+  469   3            // P32 = 1;
+  470   3            aim_angle_filter = offset_weight;
+  471   3          }
+  472   2        }
+  473   1        //需要用惯导的状态放在这里
+  474   1        if(flag_ramp == RAMP_IN_MID || flag_cross_circle == CROSS_CIRCLE_OUT || flag_circle == CIRCLE_LEFT_OUT){
+  475   2          aim_angle_filter = offset_inertia;
+  476   2        }
+  477   1        
+  478   1      
+  479   1        //十字
+  480   1        if(flag_cross != CROSS_NONE  && flag_ramp == RAMP_NONE && !offset_keep_flag){
+  481   2          //全丢线，惯导
+  482   2          if(count_ones(ccd_data_01,128)>89&&count_ones(ccd_data_02,128)>=60){
+  483   3            flag_cross = CROSS_MID;
+  484   3            aim_angle_filter = offset_inertia;
+  485   3            // P32 = 1;
+  486   3          }
+  487   2          //ccd1有线，ccd2丢线，寻远线
+  488   2          else if(count_ones(ccd_data_01,128)<40&&count_ones(ccd_data_02,128)>=60 && offset1 < 12 && offset1 > -1
+             -2){
+  489   3            flag_cross = CROSS_MID;
+  490   3            aim_angle_filter = offset_inertia;
+  491   3            // P32 = 1;
+  492   3          }
+  493   2          //ccd1丢线，ccd2未丢线，寻近线
+  494   2          else if(count_ones(ccd_data_01,128)>89&&count_ones(ccd_data_02,128)<60){
+  495   3            
+  496   3            flag_cross = CROSS_RUNNING;
+  497   3            aim_angle_filter = offset2;
+  498   3            get_target_yaw(offset2);
+  499   3            // P32 = 0;
+  500   3          }
+  501   2          // ccd1和ccd2都有线，退出十字
+  502   2          else if(count_ones(ccd_data_01,128)<35&&count_ones(ccd_data_02,128)<=55){
+  503   3            aim_angle_filter = offset2;
+  504   3            flag_cross = CROSS_NONE;
+  505   3          }
+  506   2      //    else if(cross_distence > 27300){                     //这段加上 不知道为什么会在s弯接下来的十字那里概
+             -率识别成圆环
+  507   2      //      aim_angle_filter = offset2;
+  508   2      //      flag_cross = CROSS_NONE;                     
+  509   2      //      P32 = 1;
+  510   2      //    }
+C251 COMPILER V5.60.0,  CCD_Driver                                                         22/11/24  22:30:24  PAGE 9   
+
+  511   2          else{
+  512   3            aim_angle_filter = offset_inertia;
+  513   3          }
+  514   2        }
+  515   1        //特殊位置打固定角度
+  516   1        if(offset_keep_flag){
+  517   2          aim_angle_filter = offset_keep;
+  518   2        }
+  519   1        //斑马线检测
+  520   1        if(zebra_stop(ccd_data_02,128) >= 7 && count_ones_ccd1 >28 && count_ones_ccd1 < 32){//第一次检测到斑马线
+  521   2          if(count_ones(ccd_data_02, 128)<7)
+  522   2            zebra_flag = 1;
+  523   2            count_zebra_flag = count_start;
+  524   2        }
+  525   1        if(zebra_stop(ccd_data_02,128) >= 7 && count_ones_ccd1 >28 && count_ones_ccd1 < 32 && zebra_distence > 5
+             -0000 && zebra_flag){//第一次检测到斑马线
+  526   2          if(count_ones(ccd_data_02, 128)<7){
+  527   3            process_flag = 0;
+  528   3          }
+  529   2        }
+  530   1        
+  531   1      }
+  532          
+  533          
+  534          
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =      3874     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =       651     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =       890     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,69 @@
+C251 COMPILER V5.60.0,  A_Vofa                                                             22/11/24  22:30:25  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE A_Vofa
+OBJECT MODULE PLACED IN .\Out_File\A_Vofa.obj
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE ..\USER\src\A_Vofa.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE I
+                    -NCDIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\i
+                    -nc;..\USER\src;..\..\Libraries\seekfree_components) DEBUG PRINT(.\Out_File\A_Vofa.lst) TABS(2) OBJECT(.\Out_File\A_Vofa.
+                    -obj) 
+
+stmt  level    source
+
+    1          
+    2          #include "A_Vofa.h"
+    3          
+    4          float vofa_send_data[VOFA_MAX] = {0};
+    5          
+    6          // 把浮点数据转为4个八位数据，存到数组中
+    7          static void Float_to_Byte(float f, uint8 byte[]) 
+    8          {
+    9   1          FloatLongType1 fl;
+   10   1          fl.fdata = f;
+   11   1          byte[0] = (unsigned char)fl.ldata;
+   12   1          byte[1] = (unsigned char)(fl.ldata >> 8);
+   13   1          byte[2] = (unsigned char)(fl.ldata >> 16);
+   14   1          byte[3] = (unsigned char)(fl.ldata >> 24);
+   15   1      }
+   16          
+   17          // vofa+上位机协议-Justfloat
+   18          void vodka_JustFloat_send(float *data_str,uint16 num) 
+   19          {
+   20   1          uint8 i = 0;
+   21   1          uint8 byte[4] = {0};
+   22   1          uint8 tail[4] = {0x00, 0x00, 0x80, 0x7f}; 
+   23   1          // 循环遍历数据并发送
+   24   1          for (i = 0; i < num; i++) 
+   25   1          {
+   26   2              Float_to_Byte(data_str[i], byte);
+   27   2              UART_PutChar(byte);
+   28   2          }
+   29   1          
+   30   1          UART_PutChar(tail);// 发送帧尾
+   31   1      }
+   32          
+   33          
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =       204     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =      1047     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =      1032     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
