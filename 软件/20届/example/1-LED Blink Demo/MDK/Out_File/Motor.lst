@@ -1,0 +1,147 @@
+C251 COMPILER V5.60.0,  Motor                                                              30/12/24  14:01:21  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE Motor
+OBJECT MODULE PLACED IN .\Out_File\Motor.obj
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE Motor.c LARGE WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCDIR(..\..\Li
+                    -braries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc;..\USER\src
+                    -;..\..\Libraries\seekfree_components;..\USER\inc;..\USER\src;..\MDK) DEBUG PRINT(.\Out_File\Motor.lst) TABS(2) OBJECT(.\
+                    -Out_File\Motor.obj) 
+
+stmt  level    source
+
+    1          #include "headfile.h"
+    2          #include "Motor.h"
+    3          
+    4          // 编码器值
+    5          uint16 r_encoder = 0;
+    6          uint16 l_encoder = 0;
+    7          
+    8          // 目标速度
+    9          float r_target_speed = 20.0;
+   10          float l_target_speed = 20.0;
+   11          
+   12          // 累计电机增量
+   13          float motor_inc = 0;
+   14          
+   15          // 实际速度
+   16          float r_speed = 0.0, l_speed = 0.0;
+   17          
+   18          // 目标转速
+   19          float r_endspeed = 0;
+   20          float l_endspeed = 0;
+   21          
+   22          // 速度误差
+   23          float l_error = 0;
+   24          float r_error = 0;
+   25          
+   26          // 实际转向
+   27          float set_turn = 0.37;
+   28          
+   29          // 上一次的输入值
+   30          float last_in_L = 0;
+   31          float last_in_R = 0;
+   32          float last_in_turn = 0;
+   33          
+   34          // 时间间隔
+   35          float T = 0.005;
+   36          
+   37          // 前进标志
+   38          float forward_flag = 0.17; // 前进前馈控制的权重
+   39          
+   40          // 距离保护标志
+   41          char distance_protect = 0; // 1 表示开启，0 表示关闭
+   42          extern char flag_distance_protect; // 外部距离保护标志
+   43          
+   44          // 角度速度和转向速度
+   45          float angle_speed = 0;
+   46          float turn_speed = 0;
+   47          
+   48          // 文本标志位
+   49          int text = 0; // 文本标志位
+   50          
+   51          // PWM 值
+   52          float r_pwm = 0.0;
+   53          float l_pwm = 0.0;
+   54          
+   55          // 计算速度
+   56          float calculate_speed(uint16 encoder_value, int direction) {
+C251 COMPILER V5.60.0,  Motor                                                              30/12/24  14:01:21  PAGE 2   
+
+   57   1          return (float)encoder_value / 1024.0f * 200.0f * (direction == 0 ? 1.0f : -1.0f);
+   58   1      }
+   59          
+   60          // 电机控制函数
+   61          void motor(void)
+   62          {
+   63   1          // 读取编码器值
+   64   1          l_encoder = ctimer_count_read(MOTOR1_ENCODER);
+   65   1          r_encoder = ctimer_count_read(MOTOR2_ENCODER);
+   66   1          
+   67   1          // 清除编码器计数
+   68   1          ctimer_count_clean(CTIM0_P34);
+   69   1          ctimer_count_clean(CTIM3_P04);
+   70   1          
+   71   1          // 计算左电机速度
+   72   1          l_speed = calculate_speed(l_encoder, MOTOR1_DIR);
+   73   1      
+   74   1          // 计算右电机速度
+   75   1          r_speed = calculate_speed(r_encoder, MOTOR2_DIR);
+   76   1          
+   77   1          // 累加电机增量
+   78   1          motor_inc += (fabs(r_speed) + fabs(l_speed)) * 0.5f;
+   79   1          
+   80   1          // 控制 PWM 基于距离保护和角度/转向速度
+   81   1      
+   82   1          
+   83   1      }
+   84          
+   85          // 左电机前馈控制
+   86          float forwardfeed_L(float inc_in) {
+   87   1          float inc_out;
+   88   1          inc_out = (inc_in - last_in_L) * forward_flag + inc_in;
+   89   1          last_in_L = inc_in;
+   90   1          return inc_out;
+   91   1      }
+   92          
+   93          // 右电机前馈控制
+   94          float forwardfeed_R(float inc_in) {
+   95   1          float inc_out;
+   96   1          inc_out = (inc_in - last_in_R) * forward_flag + inc_in;
+   97   1          last_in_R = inc_in;
+   98   1          return inc_out;
+   99   1      }
+  100          
+  101          // 转向前馈控制
+  102          float forwardfeed_turn(float inc_in) {
+  103   1          float inc_out;
+  104   1          inc_out = (inc_in - last_in_turn) * 0.15 + inc_in;
+  105   1          last_in_turn = inc_in;
+  106   1          return inc_out;
+  107   1      }
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =       523     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =       111     ------
+  xdata-const size     =    ------     ------
+  edata size           =    ------     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+C251 COMPILER V5.60.0,  Motor                                                              30/12/24  14:01:21  PAGE 3   
+
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =       198     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

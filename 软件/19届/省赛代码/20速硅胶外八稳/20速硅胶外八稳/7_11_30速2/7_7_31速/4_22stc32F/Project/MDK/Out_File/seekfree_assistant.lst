@@ -1,12 +1,12 @@
-C251 COMPILER V5.60.0,  seekfree_assistant                                                 15/07/24  23:30:48  PAGE 1   
+C251 COMPILER V5.60.0,  seekfree_assistant                                                 19/12/24  21:12:34  PAGE 1   
 
 
 C251 COMPILER V5.60.0, COMPILATION OF MODULE seekfree_assistant
 OBJECT MODULE PLACED IN .\Out_File\seekfree_assistant.obj
-COMPILER INVOKED BY: D:\c51-keil\C251\BIN\C251.EXE ..\..\Libraries\seekfree_components\seekfree_assistant.c XSMALL WARNI
-                    -NGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCDIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\
-                    -seekfree_peripheral;..\CODE;..\USER\inc;..\USER\src;..\..\Libraries\seekfree_components;.\Out_File) DEBUG PRINT(.\Out_Fi
-                    -le\seekfree_assistant.lst) TABS(2) OBJECT(.\Out_File\seekfree_assistant.obj) 
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE ..\..\Libraries\seekfree_components\seekfree_assistant.c XSMALL WARNIN
+                    -GLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCDIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\s
+                    -eekfree_peripheral;..\CODE;..\USER\inc;..\USER\src;..\..\Libraries\seekfree_components;.\Out_File) DEBUG PRINT(.\Out_Fil
+                    -e\seekfree_assistant.lst) TABS(2) OBJECT(.\Out_File\seekfree_assistant.obj) 
 
 stmt  level    source
 
@@ -66,7 +66,7 @@ stmt  level    source
    47   1      }
    48          
    49          
-C251 COMPILER V5.60.0,  seekfree_assistant                                                 15/07/24  23:30:48  PAGE 2   
+C251 COMPILER V5.60.0,  seekfree_assistant                                                 19/12/24  21:12:34  PAGE 2   
 
    50          //-------------------------------------------------------------------------------------------------------
              -------------
@@ -134,7 +134,7 @@ stmt  level    source
   107   1      
   108   1        uint32 i = 0;
   109   1          // 尝试读取数据, 如果不是自定义的传输方式则从接收回调中读取数据
-C251 COMPILER V5.60.0,  seekfree_assistant                                                 15/07/24  23:30:48  PAGE 3   
+C251 COMPILER V5.60.0,  seekfree_assistant                                                 19/12/24  21:12:34  PAGE 3   
 
   110   1          read_length = seekfree_assistant_receive((uint8 *)temp_buffer, SEEKFREE_ASSISTANT_BUFFER_SIZE);
   111   1          if(read_length)
@@ -202,7 +202,7 @@ stmt  level    source
   164   1      }
   165          
   166          
-C251 COMPILER V5.60.0,  seekfree_assistant                                                 15/07/24  23:30:48  PAGE 4   
+C251 COMPILER V5.60.0,  seekfree_assistant                                                 19/12/24  21:12:34  PAGE 4   
 
 
 

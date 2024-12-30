@@ -1,12 +1,12 @@
-C251 COMPILER V5.60.0,  motor                                                              15/07/24  23:30:47  PAGE 1   
+C251 COMPILER V5.60.0,  motor                                                              19/12/24  21:12:31  PAGE 1   
 
 
 C251 COMPILER V5.60.0, COMPILATION OF MODULE motor
 OBJECT MODULE PLACED IN .\Out_File\motor.obj
-COMPILER INVOKED BY: D:\c51-keil\C251\BIN\C251.EXE Out_File\motor.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCD
-                    -IR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc;
-                    -..\USER\src;..\..\Libraries\seekfree_components;.\Out_File) DEBUG PRINT(.\Out_File\motor.lst) TABS(2) OBJECT(.\Out_File\
-                    -motor.obj) 
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE Out_File\motor.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCDI
+                    -R(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc;.
+                    -.\USER\src;..\..\Libraries\seekfree_components;.\Out_File) DEBUG PRINT(.\Out_File\motor.lst) TABS(2) OBJECT(.\Out_File\m
+                    -otor.obj) 
 
 stmt  level    source
 
@@ -14,381 +14,387 @@ stmt  level    source
     2          
     3          int r_encoder =0;
     4          int l_encoder =0;
-    5          float r_target_speed = 20.0;
-    6          float l_target_speed = 20.0;
-    7          
-    8          float r_last_speed=0;
-    9          float angle_speed=0;
-   10          float turn_speed=0;
-   11          float set_turn=0.37;
-   12          float forward_flag=0.17;
-   13          
-   14          //float fab_l_speed=0;
-   15          //float fab_r_speed=0;
-   16          
-   17          //实际速度
-   18          float r_speed=0.0,l_speed=0.0;
-   19          //转弯计算速度
-   20          float r_endspeed=0;
-   21          float l_endspeed=0;
-   22          float l_error=0;
-   23          float r_error=0;
-   24          
-   25          char turn_count=0;
+    5          //左右轮速度
+    6          float r_target_speed = 16.0;
+    7          float l_target_speed = 16.0;
+    8          
+    9          float r_last_speed=0;
+   10          float angle_speed=0;
+   11          float turn_speed=0;
+   12          
+   13          float set_turn=0.37;//？？？
+   14          float forward_flag=0.17;
+   15          
+   16          //float fab_l_speed=0;
+   17          //float fab_r_speed=0;
+   18          
+   19          //实际速度
+   20          float r_speed=0.0,l_speed=0.0;
+   21          //转弯计算速度
+   22          float r_endspeed=0;
+   23          float l_endspeed=0;
+   24          float l_error=0;
+   25          float r_error=0;
    26          
-   27          float last_in_L=0;
-   28          float last_in_R=0;
-   29          float T=0.005;
-   30          
-   31          float last_in_turn=0;
-   32          void motor(void)
-   33          {
-   34   1        l_encoder = ctimer_count_read(MOTOR1_ENCODER);
-   35   1        r_encoder = ctimer_count_read(MOTOR2_ENCODER);
-   36   1        
-   37   1        ctimer_count_clean(CTIM0_P34);
-   38   1        ctimer_count_clean(CTIM3_P04);
-   39   1        
-   40   1        
-   41   1      //  if(motor_inc < 300 &&forward_flag==0)
-   42   1      //  {
-   43   1      //    forward_flag=0;
-   44   1      //  }
-   45   1      //  else 
-   46   1      //  {
-   47   1      //    forward_flag=0.35;
-   48   1      //  }
-   49   1        
-   50   1        
-   51   1      //  fab_r_speed = (float)r_encoder / 1024.0f * 200.0f ;
-   52   1      //  fab_l_speed = (float)l_encoder / 1024.0f * 200.0f ;   //计算出1s多少转
-   53   1        if(MOTOR1_DIR == 0)                                     //计算出1s多少转以及正反转
-   54   1        {
-   55   2          l_speed = (float)l_encoder / 1024.0f * 200.0f ;
-   56   2        }
-C251 COMPILER V5.60.0,  motor                                                              15/07/24  23:30:47  PAGE 2   
+   27          char turn_count=0;
+   28          
+   29          float last_in_L=0;
+   30          float last_in_R=0;
+   31          float T=0.005;
+   32          
+   33          float last_in_turn=0;
+   34          void motor(void)
+   35          {
+   36   1        //编码器读取位移
+   37   1        l_encoder = ctimer_count_read(MOTOR1_ENCODER);
+   38   1        r_encoder = ctimer_count_read(MOTOR2_ENCODER);
+   39   1        //读数归零
+   40   1        ctimer_count_clean(CTIM0_P34);
+   41   1        ctimer_count_clean(CTIM3_P04);
+   42   1        
+   43   1        
+   44   1      //  if(motor_inc < 300 &&forward_flag==0)
+   45   1      //  {
+   46   1      //    forward_flag=0;
+   47   1      //  }
+   48   1      //  else 
+   49   1      //  {
+   50   1      //    forward_flag=0.35;
+   51   1      //  }
+   52   1        
+   53   1        
+   54   1      //  fab_r_speed = (float)r_encoder / 1024.0f * 200.0f ;
+   55   1      //  fab_l_speed = (float)l_encoder / 1024.0f * 200.0f ;   //计算出1s多少转
+   56   1        
+C251 COMPILER V5.60.0,  motor                                                              19/12/24  21:12:31  PAGE 2   
 
-   57   1        else
+   57   1        if(MOTOR1_DIR == 0)                                     //计算出1s多少转以及正反转
    58   1        {
-   59   2          l_speed = (float)l_encoder / 1024.0f * 200.0f * -1;
+   59   2          l_speed = (float)l_encoder / 1024.0f * 200.0f ;
    60   2        }
-   61   1        if(MOTOR2_DIR == 1)                                     //计算出1s多少转以及正反转
+   61   1        else
    62   1        {
-   63   2          r_speed = (float)r_encoder / 1024.0f * 200.0f  ;
+   63   2          l_speed = (float)l_encoder / 1024.0f * 200.0f * -1;
    64   2        }
-   65   1        else
+   65   1        if(MOTOR2_DIR == 1)                                     //计算出1s多少转以及正反转
    66   1        {
-   67   2          r_speed = (float)r_encoder / 1024.0f * 200.0f * -1;
+   67   2          r_speed = (float)r_encoder / 1024.0f * 200.0f  ;
    68   2        }
-   69   1        motor_inc += (fabs(r_speed) + fabs(l_speed)) * 0.5f; //电机积分
-   70   1      
-   71   1        
-   72   1      //      turn_speed=turn_PstPID(pow_error ,&turn_pid);     //转向环
-   73   1        
-   74   1        
+   69   1        else
+   70   1        {
+   71   2          r_speed = (float)r_encoder / 1024.0f * 200.0f * -1;
+   72   2        }
+   73   1        motor_inc += (fabs(r_speed) + fabs(l_speed)) * 0.5f; //电机积分
+   74   1      
    75   1        
-   76   1        
-   77   1        if(turn_count<5)
-   78   1        {
-   79   2          turn_count++;
-   80   2          
-   81   2        }
-   82   1        else if(turn_count>=5)
-   83   1        {
+   76   1      //      turn_speed=turn_PstPID(pow_error ,&turn_pid);     //转向环
+   77   1        
+   78   1        
+   79   1        
+   80   1        
+   81   1        if(turn_count<5)
+   82   1        {
+   83   2          turn_count++;
    84   2          
-   85   2          //multistage_pid_turn();
-   86   2          turn_speed=forwardfeed_turn(turn_PstPID(error ,&turn_pid));     //转向环
-   87   2      //    turn_speed=turn_PstPID(error ,&turn_pid);
-   88   2      //  angle_speed=IncPID(gyro_x*0.01,0 ,&w_pid);    //角速度环，抑制
-   89   2        
-   90   2          turn_count=0;
-   91   2        }
-   92   1            
-   93   1          
-   94   1        
-   95   1        
-   96   1      //  distance_protect=1;
-   97   1      //  turn_speed=0;
-   98   1      //  angle_speed=0;
+   85   2        }
+   86   1        else if(turn_count>=5)
+   87   1        {
+   88   2          
+   89   2          //multistage_pid_turn();
+   90   2          turn_speed=forwardfeed_turn(turn_PstPID(error ,&turn_pid));     //转向环
+   91   2      //    turn_speed=turn_PstPID(error ,&turn_pid);
+   92   2      //  angle_speed=IncPID(gyro_x*0.01,0 ,&w_pid);    //角速度环，抑制
+   93   2        
+   94   2          turn_count=0;
+   95   2        }
+   96   1            
+   97   1          
+   98   1        
    99   1        
-  100   1            if((distance_protect)&&(angle_speed<=0)&&(turn_speed<=0))//&&(angle_speed<0
-  101   1            {
-  102   2              r_endspeed=r_target_speed+angle_speed -turn_speed*set_turn;
-  103   2              l_endspeed=l_target_speed-angle_speed +turn_speed*(1.0-set_turn);
-  104   2              
-  105   2              r_error=r_endspeed-r_speed;
-  106   2              l_error=l_endspeed-l_speed;
-  107   2              multistage_pid();
-  108   2      
-  109   2      //        r_pwm = r_pwm+IncPID(r_speed,r_endspeed,&R_pid); //加速         //速度环
-  110   2      //        l_pwm = l_pwm+IncPID(l_speed,l_endspeed,&L_pid);      //-angle_speed
-  111   2              r_pwm = r_pwm+forwardfeed_R(IncPID(r_speed,r_endspeed,&R_pid)); //加速          //速度环
-  112   2              l_pwm = l_pwm+forwardfeed_L(IncPID(l_speed,l_endspeed,&L_pid));       //-angle_speed
-  113   2            }
-  114   1            else if((distance_protect)&&(angle_speed<=0)&&(turn_speed>0))
-  115   1            {
-  116   2              r_endspeed=r_target_speed+angle_speed -turn_speed*(1.0-set_turn);
-  117   2              l_endspeed=l_target_speed-angle_speed +turn_speed*set_turn;
-  118   2              
-  119   2              r_error=r_endspeed-r_speed;
-  120   2              l_error=l_endspeed-l_speed;
-  121   2              multistage_pid();
-  122   2      
-C251 COMPILER V5.60.0,  motor                                                              15/07/24  23:30:47  PAGE 3   
+  100   1      //  distance_protect=1;
+  101   1      //  turn_speed=0;
+  102   1      //  angle_speed=0;
+  103   1        
+  104   1            if((distance_protect)&&(angle_speed<=0)&&(turn_speed<=0))//&&(angle_speed<0
+  105   1            {
+  106   2              r_endspeed=r_target_speed+angle_speed -turn_speed*set_turn;
+  107   2              l_endspeed=l_target_speed-angle_speed +turn_speed*(1.0-set_turn);
+  108   2              //？？为什么要通过这个来选择pid 12.5   速度不同，所需要的pid也不一样
+  109   2              r_error=r_endspeed-r_speed;
+  110   2              l_error=l_endspeed-l_speed;
+  111   2              multistage_pid();
+  112   2      
+  113   2      //        r_pwm = r_pwm+IncPID(r_speed,r_endspeed,&R_pid); //加速         //速度环
+  114   2      //        l_pwm = l_pwm+IncPID(l_speed,l_endspeed,&L_pid);      //-angle_speed
+  115   2              r_pwm = r_pwm+forwardfeed_R(IncPID(r_speed,r_endspeed,&R_pid)); //加速          //速度环
+  116   2              l_pwm = l_pwm+forwardfeed_L(IncPID(l_speed,l_endspeed,&L_pid));       //-angle_speed
+  117   2            }
+  118   1            else if((distance_protect)&&(angle_speed<=0)&&(turn_speed>0))
+  119   1            {
+  120   2              r_endspeed=r_target_speed+angle_speed -turn_speed*(1.0-set_turn);
+  121   2              l_endspeed=l_target_speed-angle_speed +turn_speed*set_turn;
+  122   2              
+C251 COMPILER V5.60.0,  motor                                                              19/12/24  21:12:31  PAGE 3   
 
-  123   2              r_pwm = r_pwm+forwardfeed_R(IncPID(r_speed,r_endspeed,&R_pid)); //加速          //速度环
-  124   2              l_pwm = l_pwm+forwardfeed_L(IncPID(l_speed,l_endspeed,&L_pid));       //-angle_speed
-  125   2            }
-  126   1            else if((distance_protect)&&(angle_speed>0)&&(turn_speed<=0))
-  127   1            {
-  128   2              r_endspeed=r_target_speed+angle_speed -turn_speed*set_turn;
-  129   2              l_endspeed=l_target_speed-angle_speed +turn_speed*(1.0-set_turn);
-  130   2              
-  131   2              r_error=r_endspeed-r_speed;
-  132   2              l_error=l_endspeed-l_speed;
-  133   2              multistage_pid();
+  123   2              r_error=r_endspeed-r_speed;
+  124   2              l_error=l_endspeed-l_speed;
+  125   2              multistage_pid();
+  126   2      
+  127   2              r_pwm = r_pwm+forwardfeed_R(IncPID(r_speed,r_endspeed,&R_pid)); //加速          //速度环
+  128   2              l_pwm = l_pwm+forwardfeed_L(IncPID(l_speed,l_endspeed,&L_pid));       //-angle_speed
+  129   2            }
+  130   1            else if((distance_protect)&&(angle_speed>0)&&(turn_speed<=0))
+  131   1            {
+  132   2              r_endspeed=r_target_speed+angle_speed -turn_speed*set_turn;
+  133   2              l_endspeed=l_target_speed-angle_speed +turn_speed*(1.0-set_turn);
   134   2              
-  135   2              r_pwm = r_pwm+forwardfeed_R(IncPID(r_speed,r_endspeed,&R_pid)); //加速          //速度环
-  136   2              l_pwm = l_pwm+forwardfeed_L(IncPID(l_speed,l_endspeed,&L_pid));       //-angle_speed
-  137   2            }
-  138   1            else if((distance_protect)&&(angle_speed>0)&&(turn_speed>0))
-  139   1            {
-  140   2              r_endspeed=r_target_speed+angle_speed -turn_speed*(1.0-set_turn);
-  141   2              l_endspeed=l_target_speed-angle_speed +turn_speed*set_turn;
-  142   2              
-  143   2              r_error=r_endspeed-r_speed;
-  144   2              l_error=l_endspeed-l_speed;
-  145   2              multistage_pid();
-  146   2            
-  147   2              r_pwm = r_pwm+forwardfeed_R(IncPID(r_speed,r_endspeed,&R_pid)); //加速          //速度环
-  148   2              l_pwm = l_pwm+forwardfeed_L(IncPID(l_speed,l_endspeed,&L_pid));       //-angle_speed  
-  149   2            }
-  150   1          else if(distance_protect==0&&text==1)
-  151   1          {
-  152   2              l_pwm=0;
-  153   2              r_pwm=0;
-  154   2              mr_pid.Bias=0;
-  155   2              ml_pid.Bias=0;
-  156   2      
-  157   2              pwm_duty(MOTOR1,0); //左
-  158   2              pwm_duty(MOTOR2,0); //右
-  159   2          }
-  160   1      
-  161   1      
-  162   1      
-  163   1      //        r_pwm = r_pwm+IncPID(r_speed,10,&R_pid);      //速度环      +angle_speed
-  164   1      //        l_pwm = l_pwm+IncPID(l_speed,10,&L_pid);  
+  135   2              r_error=r_endspeed-r_speed;
+  136   2              l_error=l_endspeed-l_speed;
+  137   2              multistage_pid();
+  138   2              
+  139   2              r_pwm = r_pwm+forwardfeed_R(IncPID(r_speed,r_endspeed,&R_pid)); //加速          //速度环
+  140   2              l_pwm = l_pwm+forwardfeed_L(IncPID(l_speed,l_endspeed,&L_pid));       //-angle_speed
+  141   2            }
+  142   1            else if((distance_protect)&&(angle_speed>0)&&(turn_speed>0))
+  143   1            {
+  144   2              r_endspeed=r_target_speed+angle_speed -turn_speed*(1.0-set_turn);
+  145   2              l_endspeed=l_target_speed-angle_speed +turn_speed*set_turn;
+  146   2              
+  147   2              r_error=r_endspeed-r_speed;
+  148   2              l_error=l_endspeed-l_speed;
+  149   2              multistage_pid();
+  150   2            
+  151   2              r_pwm = r_pwm+forwardfeed_R(IncPID(r_speed,r_endspeed,&R_pid)); //加速          //速度环
+  152   2              l_pwm = l_pwm+forwardfeed_L(IncPID(l_speed,l_endspeed,&L_pid));       //-angle_speed  
+  153   2            }
+  154   1          else if(distance_protect==0&&text==1)
+  155   1          {
+  156   2              l_pwm=0;
+  157   2              r_pwm=0;
+  158   2              mr_pid.Bias=0;
+  159   2              ml_pid.Bias=0;
+  160   2      
+  161   2              pwm_duty(MOTOR1,0); //左
+  162   2              pwm_duty(MOTOR2,0); //右
+  163   2          }
+  164   1      
   165   1      
-  166   1              //限辐  
-  167   1          if(r_pwm >= 8000)
-  168   1          {   r_pwm =8000;      }
-  169   1          if(r_pwm <-8000)
-  170   1          {   r_pwm =-8000;     }
-  171   1          if(l_pwm >= 8000)
-  172   1          {   l_pwm =8000;      }
-  173   1          if(l_pwm <-8000)
-  174   1          {   l_pwm =-8000;     }   
-  175   1          
-  176   1          
-  177   1          if((r_pwm>=0)&&text==1)
-  178   1          {
-  179   2            gpio_mode(P2_4,GPO_PP);
-  180   2            MOTOR2_d=1;
-  181   2            pwm_duty(MOTOR2,r_pwm); 
-  182   2          }
-  183   1          else if((r_pwm<0)&&text==1)
-  184   1          {
-  185   2      //      MOTOR2_d=0;
-  186   2            gpio_mode(P2_4,GPO_PP);
-  187   2            MOTOR2_d=0;
-  188   2            pwm_duty(MOTOR2,-r_pwm);
-C251 COMPILER V5.60.0,  motor                                                              15/07/24  23:30:47  PAGE 4   
+  166   1      
+  167   1      //        r_pwm = r_pwm+IncPID(r_speed,10,&R_pid);      //速度环      +angle_speed
+  168   1      //        l_pwm = l_pwm+IncPID(l_speed,10,&L_pid);  
+  169   1      
+  170   1              //限辐  
+  171   1          if(r_pwm >= 8000)
+  172   1          {   r_pwm =8000;      }
+  173   1          if(r_pwm <-8000)
+  174   1          {   r_pwm =-8000;     }
+  175   1          if(l_pwm >= 8000)
+  176   1          {   l_pwm =8000;      }
+  177   1          if(l_pwm <-8000)
+  178   1          {   l_pwm =-8000;     }   
+  179   1          
+  180   1          
+  181   1          if((r_pwm>=0)&&text==1)
+  182   1          {
+  183   2            gpio_mode(P2_4,GPO_PP);
+  184   2            MOTOR2_d=1;
+  185   2            pwm_duty(MOTOR2,r_pwm); 
+  186   2          }
+  187   1          else if((r_pwm<0)&&text==1)
+  188   1          {
+C251 COMPILER V5.60.0,  motor                                                              19/12/24  21:12:31  PAGE 4   
 
-  189   2          }
-  190   1          if((l_pwm>=0)&&text==1)
-  191   1          {
-  192   2            gpio_mode(P2_6,GPO_PP);
-  193   2            MOTOR1_d=1;
-  194   2            pwm_duty(MOTOR1 ,l_pwm );
-  195   2          }
-  196   1          else if((l_pwm<0)&&text==1)
-  197   1          {
-  198   2      //      MOTOR1_d=0;
-  199   2            gpio_mode(P2_6,GPO_PP);
-  200   2            MOTOR1_d=0;
-  201   2            pwm_duty(MOTOR1,-l_pwm); 
-  202   2          }
-  203   1        
-  204   1        
-  205   1        
-  206   1        if(distance_protect==0&&text==1)
-  207   1          {
-  208   2              l_pwm=0;
-  209   2              r_pwm=0;
-  210   2              mr_pid.Bias=0;
-  211   2              ml_pid.Bias=0;
-  212   2      
-  213   2              pwm_duty(MOTOR1,0); //左
-  214   2              pwm_duty(MOTOR2,0); //右
-  215   2      
+  189   2      //      MOTOR2_d=0;
+  190   2            gpio_mode(P2_4,GPO_PP);
+  191   2            MOTOR2_d=0;
+  192   2            pwm_duty(MOTOR2,-r_pwm);
+  193   2          }
+  194   1          if((l_pwm>=0)&&text==1)
+  195   1          {
+  196   2            gpio_mode(P2_6,GPO_PP);
+  197   2            MOTOR1_d=1;
+  198   2            pwm_duty(MOTOR1 ,l_pwm );
+  199   2          }
+  200   1          else if((l_pwm<0)&&text==1)
+  201   1          {
+  202   2      //      MOTOR1_d=0;
+  203   2            gpio_mode(P2_6,GPO_PP);
+  204   2            MOTOR1_d=0;
+  205   2            pwm_duty(MOTOR1,-l_pwm); 
+  206   2          }
+  207   1        
+  208   1        
+  209   1        
+  210   1        if(distance_protect==0&&text==1)
+  211   1          {
+  212   2              l_pwm=0;
+  213   2              r_pwm=0;
+  214   2              mr_pid.Bias=0;
+  215   2              ml_pid.Bias=0;
   216   2      
-  217   2          }
-  218   1          
-  219   1        
-  220   1      }
-  221          
-  222          
-  223          
-  224          
+  217   2              pwm_duty(MOTOR1,0); //左
+  218   2              pwm_duty(MOTOR2,0); //右
+  219   2      
+  220   2      
+  221   2          }
+  222   1          
+  223   1        
+  224   1      }
   225          
-  226          void multistage_pid(void)
-  227          {
-  228   1        if((r_error<=1)&&(r_error>=-1))
-  229   1        {    PID_Set(&R_pid,10,1.3,1);  }
-  230   1        else if((r_error>1&&r_error<=3)||(r_error<-1&&r_error>=-3))   //12
-  231   1        {    PID_Set(&R_pid,20,3.2,2);  }   
-  232   1        else if((r_error>3&&r_error<=5)||(r_error<-3&&r_error>=-5))   //14
-  233   1        {    PID_Set(&R_pid,42,6.6,4);  }
-  234   1        else if((r_error>5&&r_error<=7)||(r_error<-5&&r_error>=-7))   //16
-  235   1        {    PID_Set(&R_pid,56,9,6);  }
-  236   1      //  if((r_error<=7)&&(r_error>=-7))
-  237   1      //    {    PID_Set(&R_pid,56,9,6);  }
-  238   1        else if((r_error>7&&r_error<=9)||(r_error<-7&&r_error>=-9))   //18
-  239   1        {    PID_Set(&R_pid,70,12.5,8); }
-  240   1        else if((r_error>9&&r_error<=11)||(r_error<-9&&r_error>=-11))   //20
-  241   1        {    PID_Set(&R_pid,84,14.5,10);    }
-  242   1        else if((r_error>11&&r_error<=13)||(r_error<-11&&r_error>=-13))   //22
-  243   1        {    PID_Set(&R_pid,98,17.3,12);  }
-  244   1        else if((r_error>13&&r_error<=15)||(r_error<-13&&r_error>=-15))   //24
-  245   1        {    PID_Set(&R_pid,112,19.7,14); }
-  246   1        else if((r_error>15&&r_error<=17)||(r_error<-15&&r_error>=-17))   //12
-  247   1        {    PID_Set(&R_pid,140,21.5,15); }
-  248   1        else if((r_error>17&&r_error<=19)||(r_error<-17&&r_error>=-19))   //14
-  249   1        {    PID_Set(&R_pid,178,22.9,16); }
-  250   1        else if((r_error>19&&r_error<=21)||(r_error<-19&&r_error>=-21))   //12
-  251   1        {    PID_Set(&R_pid,185,24,17); }
-  252   1        else if((r_error>21&&r_error<=23)||(r_error<-21&&r_error>=-23))   //14
-  253   1        {    PID_Set(&R_pid,195,25.5,18); }
-  254   1        else if((r_error>23&&r_error<=25)||(r_error<-23&&r_error>=-25))   //12
-C251 COMPILER V5.60.0,  motor                                                              15/07/24  23:30:47  PAGE 5   
+  226          
+  227          void multistage_pid(void)
+  228          {
+  229   1        if((r_error<=1)&&(r_error>=-1))
+  230   1        {    PID_Set(&R_pid,10,1.3,1);  }
+  231   1        else if((r_error>1&&r_error<=3)||(r_error<-1&&r_error>=-3))   //12
+  232   1        {    PID_Set(&R_pid,20,3.2,2);  }   
+  233   1        else if((r_error>3&&r_error<=5)||(r_error<-3&&r_error>=-5))   //14
+  234   1        {    PID_Set(&R_pid,42,6.6,4);  }
+  235   1        else if((r_error>5&&r_error<=7)||(r_error<-5&&r_error>=-7))   //16
+  236   1        {    PID_Set(&R_pid,56,9,6);  }
+  237   1      //  if((r_error<=7)&&(r_error>=-7))
+  238   1      //    {    PID_Set(&R_pid,56,9,6);  }
+  239   1        else if((r_error>7&&r_error<=9)||(r_error<-7&&r_error>=-9))   //18
+  240   1        {    PID_Set(&R_pid,70,12.5,8); }
+  241   1        else if((r_error>9&&r_error<=11)||(r_error<-9&&r_error>=-11))   //20
+  242   1        {    PID_Set(&R_pid,84,14.5,10);    }
+  243   1        else if((r_error>11&&r_error<=13)||(r_error<-11&&r_error>=-13))   //22
+  244   1        {    PID_Set(&R_pid,98,17.3,12);  }
+  245   1        else if((r_error>13&&r_error<=15)||(r_error<-13&&r_error>=-15))   //24
+  246   1        {    PID_Set(&R_pid,112,19.7,14); }
+  247   1        else if((r_error>15&&r_error<=17)||(r_error<-15&&r_error>=-17))   //12
+  248   1        {    PID_Set(&R_pid,140,21.5,15); }
+  249   1        else if((r_error>17&&r_error<=19)||(r_error<-17&&r_error>=-19))   //14
+  250   1        {    PID_Set(&R_pid,178,22.9,16); }
+  251   1        else if((r_error>19&&r_error<=21)||(r_error<-19&&r_error>=-21))   //12
+  252   1        {    PID_Set(&R_pid,185,24,17); }
+  253   1        else if((r_error>21&&r_error<=23)||(r_error<-21&&r_error>=-23))   //14
+  254   1        {    PID_Set(&R_pid,195,25.5,18); }
+C251 COMPILER V5.60.0,  motor                                                              19/12/24  21:12:31  PAGE 5   
 
-  255   1        {    PID_Set(&R_pid,205,27,18); }
-  256   1        else if((r_error>25&&r_error<=28)||(r_error<-25&&r_error>=-28))   //14
-  257   1        {    PID_Set(&R_pid,215,28.5,18); }
-  258   1        else if((r_error>28&&r_error<=31)||(r_error<-28&&r_error>=-31))   //14
-  259   1        {    PID_Set(&R_pid,230,30,18); }
-  260   1        else if((r_error>31&&r_error<=35)||(r_error<-31&&r_error>=-35))   //14
-  261   1        {    PID_Set(&R_pid,250,32,18); }
-  262   1        else if((r_error>35&&r_error<=40)||(r_error<-35&&r_error>=-40))   //14
-  263   1        {    PID_Set(&R_pid,270,34,18); }
-  264   1        else if((r_error>40&&r_error<=45)||(r_error<-40&&r_error>=-45))   //14
-  265   1        {    PID_Set(&R_pid,300,37,18); }
-  266   1        else if((r_error>50)||(r_error<-50))    //16
-  267   1        {    PID_Set(&R_pid,340,40,18);   }
-  268   1        
-  269   1        if((l_error<=1)&&(l_error>=-1))
-  270   1        {    PID_Set(&L_pid,10,1.3,1);  }
-  271   1        else if((l_error>1&&l_error<=3)||(l_error<-1&&l_error>=-3))   //2
-  272   1        {    PID_Set(&L_pid,20,3.2,2);  }   
-  273   1        else if((l_error>3&&l_error<=5)||(l_error<-3&&l_error>=-5))   //4
-  274   1        {    PID_Set(&L_pid,42,6.6,4);  }
-  275   1        else if((l_error>5&&l_error<=7)||(l_error<-5&&l_error>=-7))   //6
-  276   1        {    PID_Set(&L_pid,56,9,6);  }
-  277   1      //  if((l_error<=7)&&(l_error>=-7))
-  278   1      //    {    PID_Set(&L_pid,56,9,6);  }
-  279   1        else if((l_error>7&&l_error<=9)||(l_error<-7&&l_error>=-9))   //8
-  280   1        {    PID_Set(&L_pid,70,12.5,8); }
-  281   1        else if((l_error>9&&l_error<=11)||(l_error<-9&&l_error>=-11))   //10
-  282   1        {    PID_Set(&L_pid,84,14.5,10);    }
-  283   1        else if((l_error>11&&l_error<=13)||(l_error<-11&&l_error>=-13))   //12
-  284   1        {    PID_Set(&L_pid,98,17.3,12);  }
-  285   1        else if((l_error>13&&l_error<=15)||(l_error<-13&&l_error>=-15))   //14
-  286   1        {    PID_Set(&L_pid,112,19.7,14); }
-  287   1        else if((l_error>15&&l_error<=17)||(l_error<-15&&l_error>=-17))   //12
-  288   1        {    PID_Set(&L_pid,140,21.5,15); }
-  289   1        else if((l_error>17&&l_error<=19)||(l_error<-17&&l_error>=-19))   //14
-  290   1        {    PID_Set(&L_pid,178,22.9,16); }
-  291   1        else if((l_error>19&&l_error<=21)||(l_error<-19&&l_error>=-21))   //12
-  292   1        {    PID_Set(&L_pid,185,24,17); }
-  293   1        else if((l_error>21&&l_error<=23)||(l_error<-21&&l_error>=-23))   //14
-  294   1        {    PID_Set(&L_pid,195,25.5,18); }
-  295   1        else if((l_error>23&&l_error<=25)||(l_error<-23&&l_error>=-25))   //12
-  296   1        {    PID_Set(&L_pid,205,27,18); }
-  297   1        else if((l_error>25&&l_error<=28)||(l_error<-25&&l_error>=-28))   //14
-  298   1        {    PID_Set(&L_pid,215,28.5,18); }
-  299   1        else if((l_error>28&&l_error<=31)||(l_error<-28&&l_error>=-31))   //14
-  300   1        {    PID_Set(&L_pid,230,30,18); }
-  301   1        else if((l_error>31&&l_error<=35)||(l_error<-31&&l_error>=-35))   //14
-  302   1        {    PID_Set(&L_pid,250,32,18); }
-  303   1        else if((l_error>35&&l_error<=40)||(l_error<-35&&l_error>=-40))   //14
-  304   1        {    PID_Set(&L_pid,270,34,18); }
-  305   1        else if((l_error>40&&l_error<=45)||(l_error<-40&&l_error>=-45))   //14
-  306   1        {    PID_Set(&L_pid,300,37,18); }
-  307   1        else if((l_error>50)||(l_error<-50))    //16
-  308   1        {    PID_Set(&L_pid,340,40,18);   }
-  309   1        
+  255   1        else if((r_error>23&&r_error<=25)||(r_error<-23&&r_error>=-25))   //12
+  256   1        {    PID_Set(&R_pid,205,27,18); }
+  257   1        else if((r_error>25&&r_error<=28)||(r_error<-25&&r_error>=-28))   //14
+  258   1        {    PID_Set(&R_pid,215,28.5,18); }
+  259   1        else if((r_error>28&&r_error<=31)||(r_error<-28&&r_error>=-31))   //14
+  260   1        {    PID_Set(&R_pid,230,30,18); }
+  261   1        else if((r_error>31&&r_error<=35)||(r_error<-31&&r_error>=-35))   //14
+  262   1        {    PID_Set(&R_pid,250,32,18); }
+  263   1        else if((r_error>35&&r_error<=40)||(r_error<-35&&r_error>=-40))   //14
+  264   1        {    PID_Set(&R_pid,270,34,18); }
+  265   1        else if((r_error>40&&r_error<=45)||(r_error<-40&&r_error>=-45))   //14
+  266   1        {    PID_Set(&R_pid,300,37,18); }
+  267   1        else if((r_error>50)||(r_error<-50))    //16
+  268   1        {    PID_Set(&R_pid,340,40,18);   }
+  269   1        
+  270   1        if((l_error<=1)&&(l_error>=-1))
+  271   1        {    PID_Set(&L_pid,10,1.3,1);  }
+  272   1        else if((l_error>1&&l_error<=3)||(l_error<-1&&l_error>=-3))   //2
+  273   1        {    PID_Set(&L_pid,20,3.2,2);  }   
+  274   1        else if((l_error>3&&l_error<=5)||(l_error<-3&&l_error>=-5))   //4
+  275   1        {    PID_Set(&L_pid,42,6.6,4);  }
+  276   1        else if((l_error>5&&l_error<=7)||(l_error<-5&&l_error>=-7))   //6
+  277   1        {    PID_Set(&L_pid,56,9,6);  }
+  278   1      //  if((l_error<=7)&&(l_error>=-7))
+  279   1      //    {    PID_Set(&L_pid,56,9,6);  }
+  280   1        else if((l_error>7&&l_error<=9)||(l_error<-7&&l_error>=-9))   //8
+  281   1        {    PID_Set(&L_pid,70,12.5,8); }
+  282   1        else if((l_error>9&&l_error<=11)||(l_error<-9&&l_error>=-11))   //10
+  283   1        {    PID_Set(&L_pid,84,14.5,10);    }
+  284   1        else if((l_error>11&&l_error<=13)||(l_error<-11&&l_error>=-13))   //12
+  285   1        {    PID_Set(&L_pid,98,17.3,12);  }
+  286   1        else if((l_error>13&&l_error<=15)||(l_error<-13&&l_error>=-15))   //14
+  287   1        {    PID_Set(&L_pid,112,19.7,14); }
+  288   1        else if((l_error>15&&l_error<=17)||(l_error<-15&&l_error>=-17))   //12
+  289   1        {    PID_Set(&L_pid,140,21.5,15); }
+  290   1        else if((l_error>17&&l_error<=19)||(l_error<-17&&l_error>=-19))   //14
+  291   1        {    PID_Set(&L_pid,178,22.9,16); }
+  292   1        else if((l_error>19&&l_error<=21)||(l_error<-19&&l_error>=-21))   //12
+  293   1        {    PID_Set(&L_pid,185,24,17); }
+  294   1        else if((l_error>21&&l_error<=23)||(l_error<-21&&l_error>=-23))   //14
+  295   1        {    PID_Set(&L_pid,195,25.5,18); }
+  296   1        else if((l_error>23&&l_error<=25)||(l_error<-23&&l_error>=-25))   //12
+  297   1        {    PID_Set(&L_pid,205,27,18); }
+  298   1        else if((l_error>25&&l_error<=28)||(l_error<-25&&l_error>=-28))   //14
+  299   1        {    PID_Set(&L_pid,215,28.5,18); }
+  300   1        else if((l_error>28&&l_error<=31)||(l_error<-28&&l_error>=-31))   //14
+  301   1        {    PID_Set(&L_pid,230,30,18); }
+  302   1        else if((l_error>31&&l_error<=35)||(l_error<-31&&l_error>=-35))   //14
+  303   1        {    PID_Set(&L_pid,250,32,18); }
+  304   1        else if((l_error>35&&l_error<=40)||(l_error<-35&&l_error>=-40))   //14
+  305   1        {    PID_Set(&L_pid,270,34,18); }
+  306   1        else if((l_error>40&&l_error<=45)||(l_error<-40&&l_error>=-45))   //14
+  307   1        {    PID_Set(&L_pid,300,37,18); }
+  308   1        else if((l_error>50)||(l_error<-50))    //16
+  309   1        {    PID_Set(&L_pid,340,40,18);   }
   310   1        
-  311   1      }
-  312          
+  311   1        
+  312   1      }
   313          
   314          
   315          
   316          
-  317          void multistage_pid_turn(void)
-  318          {
-  319   1      //  float error_tmp = fabs(error);
-  320   1      //  if((error_tmp>0)&&(error_tmp<=0.2))
-C251 COMPILER V5.60.0,  motor                                                              15/07/24  23:30:47  PAGE 6   
+  317          
+  318          void multistage_pid_turn(void)
+  319          {
+  320   1      //  float error_tmp = fabs(error);
+C251 COMPILER V5.60.0,  motor                                                              19/12/24  21:12:31  PAGE 6   
 
-  321   1      //  {    PID_Set(&turn_pid,105,15,0); }               //105,15,0    
-  322   1      //  else if((error_tmp>0.2)&&(error_tmp<=0.4))
-  323   1      //  {    PID_Set(&turn_pid,115,10.5,0); }
-  324   1      //  else if(error_tmp>0.4&&error_tmp<=0.6)    
-  325   1      //  {    PID_Set(&turn_pid,117,11,0); }   
-  326   1      //  else if(error_tmp>0.6&&error_tmp<=0.9)    
-  327   1      //  {    PID_Set(&turn_pid,117,12,0); }
-  328   1      //  else if(error_tmp>0.9)    
-  329   1      //  {    PID_Set(&turn_pid,120,13.5,0); }
-  330   1      }
-  331          
+  321   1      //  if((error_tmp>0)&&(error_tmp<=0.2))
+  322   1      //  {    PID_Set(&turn_pid,105,15,0); }               //105,15,0    
+  323   1      //  else if((error_tmp>0.2)&&(error_tmp<=0.4))
+  324   1      //  {    PID_Set(&turn_pid,115,10.5,0); }
+  325   1      //  else if(error_tmp>0.4&&error_tmp<=0.6)    
+  326   1      //  {    PID_Set(&turn_pid,117,11,0); }   
+  327   1      //  else if(error_tmp>0.6&&error_tmp<=0.9)    
+  328   1      //  {    PID_Set(&turn_pid,117,12,0); }
+  329   1      //  else if(error_tmp>0.9)    
+  330   1      //  {    PID_Set(&turn_pid,120,13.5,0); }
+  331   1      }
   332          
-  333          //采样周期T
-  334          //转动惯量J=1
-  335          //摩擦系数f=1
-  336          //前馈环节：Gf(s)=s+1
-  337          //角速度/力矩：G(s)=1/(s+1)
-  338          //输出：out=(in-last_in)/T+in ;
-  339          float forwardfeed_L(float inc_in)       
-  340          {
-  341   1        float inc_out;
-  342   1        inc_out=(inc_in-last_in_L)*forward_flag+inc_in ;
-  343   1      //  out=(1.0/in)+in ;
-  344   1        last_in_L = inc_in;
-  345   1        return inc_out;
-  346   1      }
-  347          
-  348          float forwardfeed_R(float inc_in)       
-  349          {
-  350   1        float inc_out;
-  351   1        inc_out=(inc_in-last_in_R)*forward_flag+inc_in ;
-  352   1      //  out=(1.0/in)+in ;
-  353   1        last_in_R = inc_in;
-  354   1        return inc_out;
-  355   1      }
-  356          
+  333          
+  334          //采样周期T
+  335          //转动惯量J=1
+  336          //摩擦系数f=1
+  337          //前馈环节：Gf(s)=s+1
+  338          //角速度/力矩：G(s)=1/(s+1)
+  339          //输出：out=(in-last_in)/T+in ;
+  340          float forwardfeed_L(float inc_in)       
+  341          {
+  342   1        float inc_out;
+  343   1        inc_out=(inc_in-last_in_L)*forward_flag+inc_in ;
+  344   1      //  out=(1.0/in)+in ;
+  345   1        last_in_L = inc_in;
+  346   1        return inc_out;
+  347   1      }
+  348          
+  349          float forwardfeed_R(float inc_in)       
+  350          {
+  351   1        float inc_out;
+  352   1        inc_out=(inc_in-last_in_R)*forward_flag+inc_in ;
+  353   1      //  out=(1.0/in)+in ;
+  354   1        last_in_R = inc_in;
+  355   1        return inc_out;
+  356   1      }
   357          
-  358          float forwardfeed_turn(float inc_in)        
-  359          {
-  360   1        float inc_out;
-  361   1        inc_out=(inc_in-last_in_turn)*0.15+inc_in ;
-  362   1      //  out=(1.0/in)+in ;
-  363   1        last_in_turn = inc_in;
-  364   1        return inc_out;
-  365   1      }
-  366          
-  367          
-  368          
-  369          
+  358          
+  359          
+  360          /**
+  361              滤波函数
+  362              ？？？这个系数会带来什么效果
+  363          ***/
+  364          float forwardfeed_turn(float inc_in)        
+  365          {
+  366   1        float inc_out;
+  367   1        inc_out=(inc_in-last_in_turn)*0.15+inc_in ;
+  368   1      //  out=(1.0/in)+in ;
+  369   1        last_in_turn = inc_in;
+  370   1        return inc_out;
+  371   1      }
+  372          
+  373          
+  374          
+  375          
 
 
 Module Information          Static   Overlayable
@@ -401,14 +407,14 @@ Module Information          Static   Overlayable
   xdata size           =    ------     ------
   xdata-const size     =    ------     ------
   edata size           =        97     ------
+C251 COMPILER V5.60.0,  motor                                                              19/12/24  21:12:31  PAGE 7   
+
   bit size             =    ------     ------
   ebit size            =    ------     ------
   bitaddressable size  =    ------     ------
   ebitaddressable size =    ------     ------
   far data size        =    ------     ------
   huge data size       =    ------     ------
-C251 COMPILER V5.60.0,  motor                                                              15/07/24  23:30:47  PAGE 7   
-
   const size           =    ------     ------
   hconst size          =       153     ------
 End of Module Information.

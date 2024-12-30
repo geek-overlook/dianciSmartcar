@@ -1,4 +1,4 @@
-C251 COMPILER V5.60.0,  main                                                               22/11/24  22:30:24  PAGE 1   
+C251 COMPILER V5.60.0,  main                                                               27/12/24  03:02:30  PAGE 1   
 
 
 C251 COMPILER V5.60.0, COMPILATION OF MODULE main
@@ -63,11 +63,12 @@ stmt  level    source
    52   4              }
    53   3            switch (display_mode){
    54   4              case 0 :{
-   55   5                display_0();
+   55   5                displa_0();
+*** WARNING C140 IN LINE 55 OF ..\USER\src\main.c: 'displa_0' undefined; assuming 'extern int displa_0()'
    56   5                break;
-   57   5              }
-C251 COMPILER V5.60.0,  main                                                               22/11/24  22:30:24  PAGE 2   
+C251 COMPILER V5.60.0,  main                                                               27/12/24  03:02:30  PAGE 2   
 
+   57   5              }
    58   4              case 1 :{
    59   5                display_1();
    60   5                break;
@@ -102,4 +103,4 @@ Module Information          Static   Overlayable
 End of Module Information.
 
 
-C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
+C251 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

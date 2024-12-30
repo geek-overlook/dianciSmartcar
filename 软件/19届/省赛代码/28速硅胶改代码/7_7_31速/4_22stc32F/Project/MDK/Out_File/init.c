@@ -1,293 +1,120 @@
 #include "headfile.h"
 
-//adc»ñÈ¡Öµ
-float adc[11]={0} ;
+// ADC è¯»å–å€¼æ•°ç»„
+float adc[11] = {0}; // ç”¨äºå­˜å‚¨ ADC è¯»å–çš„å€¼
 
-//ÍÓÂİÒÇ±äÁ¿
-int init_gyro_x = 0,init_gyro_y = 0,init_gyro_z = 0;
-float new_gyro_x = 0,new_gyro_y = 0,new_gyro_z = 0;
-float z_inc = 0,x_inc=0,y_inc=0;
-float angle_x;
+// åˆå§‹åŒ–é™€èºä»ªçš„å˜é‡
+int init_gyro_x = 0, init_gyro_y = 0, init_gyro_z = 0; // é™€èºä»ªåˆå§‹åŒ–å€¼
+float new_gyro_x = 0, new_gyro_y = 0, new_gyro_z = 0; // æ–°çš„é™€èºä»ªå€¼
+float z_inc = 0, x_inc = 0, y_inc = 0; // å¢é‡å€¼
+float angle_x; // è§’åº¦å€¼
 
-float last_acc_x,last_acc_y,last_acc_z;
-float last_gyro_x,last_gyro_y,last_gyro_z;
+// ä¸Šä¸€ä¸ªåŠ é€Ÿåº¦å’Œé™€èºä»ªå€¼
+float last_acc_x, last_acc_y, last_acc_z; 
+float last_gyro_x, last_gyro_y, last_gyro_z;
 
-float Xdata=0.0,Ydata=0.0,Zdata=0.0;
-float acc_x=0.0,acc_y=0.0,acc_z=0.0;
-float gyro_x=0.0,gyro_y=0.0,gyro_z=0.0;
+// å½“å‰åŠ é€Ÿåº¦å’Œé™€èºä»ªå€¼
+float Xdata = 0.0, Ydata = 0.0, Zdata = 0.0; 
+float acc_x = 0.0, acc_y = 0.0, acc_z = 0.0; 
+float gyro_x = 0.0, gyro_y = 0.0, gyro_z = 0.0; 
 
-int text=0;//textÁãÆ¯±êÖ¾Î»
-float alpha = 0.3;
+int text = 0; // æ–‡æœ¬æ ‡å¿—ä½
+float alpha = 0.3; // å¹³æ»‘å› å­
 
-char a=0;
+char a = 0; // è®¡æ•°å™¨
 
-//µç»úpwmÊä³ö
-float r_pwm=0.0,l_pwm=0.0;
-float last_r_pwm=0.0,last_l_pwm=0.0;
+// PWM å˜é‡
+float r_pwm = 0.0, l_pwm = 0.0; // å³ç”µæœºå’Œå·¦ç”µæœºçš„ PWM å€¼
+float last_r_pwm = 0.0, last_l_pwm = 0.0; // ä¸Šä¸€ä¸ª PWM å€¼
 
+#define ADC_CHANNELS 7 // ADC é€šé“æ•°é‡
+const int adc_channels[ADC_CHANNELS] = {ADC0, ADC1, ADC2, ADC3, ADC4, ADC5, ADC6}; // ADC é€šé“æ•°ç»„
 
-void car_pre_init(void)
+void car_pre_init(void) // è½¦è¾†é¢„åˆå§‹åŒ–å‡½æ•°
 {
-	//³õÊ¼»¯PID
-	PID_init(&mr_pid); 			//½ÇËÙ¶È»·
-	PID_init(&ml_pid);
-	PID_init(&R_pid);  			//ËÙ¶È»·
-	PID_init(&L_pid);
-	PID_init(&turn_pid);				//½ÇËÙ¶È»·
-//	PID_init(&Steer_pid);
+	// åˆå§‹åŒ– PID æ§åˆ¶å™¨
+	PID_init(&mr_pid); // å³ç”µæœº PID
+	PID_init(&ml_pid); // å·¦ç”µæœº PID
+	PID_init(&R_pid); // å³è½® PID
+	PID_init(&L_pid); // å·¦è½® PID
+	PID_init(&turn_pid); // è½¬å‘ PID
 
-	PID_Set(&R_pid,200,25,17);				
-	PID_Set(&L_pid,200,25,17);			//11ËÙËÙ¶È»·pid60,18,20 			14ËÙ¶È140,57  £¬	//ËÙ¶È»·
-//	PID_Set(&mr_pid,1,1,0);				
-//	PID_Set(&ml_pid,1,1,0);			//  //½Ç¶È»·
-	
-	PID_Set(&w_pid,0.7,0.1,0);				//½ÇËÙ¶È»·	20 10
-//	PID_Set(&turn_pid,162,19,0);				//Îó²î×ªÏò»·		120£¬14
-	PID_turnSet(&turn_pid,190,5,17,24);				//Îó²î×ªÏò»·   260,27,0
+	// è®¾ç½® PID å‚æ•°
+	PID_Set(&R_pid, 200, 25, 17); // è®¾ç½®å³è½® PID å‚æ•°
+	PID_Set(&L_pid, 200, 25, 17); // è®¾ç½®å·¦è½® PID å‚æ•°
+	PID_Set(&w_pid, 0.7, 0.1, 0); // è®¾ç½®é€Ÿåº¦ PID å‚æ•°
+	PID_turnSet(&turn_pid, 190, 5, 17, 24); // è®¾ç½®è½¬å‘ PID å‚æ•°
 
+	// åˆå§‹åŒ– ADC
+	for (int i = 0; i < ADC_CHANNELS; i++) {
+		adc_init(adc_channels[i], ADC_SYSclk_DIV_2); // åˆå§‹åŒ–æ¯ä¸ª ADC é€šé“
+	}
+	delay_ms(10); // å»¶è¿Ÿä»¥ç¡®ä¿åˆå§‹åŒ–å®Œæˆ
 	
-	//³õÊ¼»¯ADC
-	adc_init(ADC_P01, ADC_SYSclk_DIV_2);	//³õÊ¼»¯ADC,P0.6Í¨µÀ £¬ADCÊ±ÖÓÆµÂÊ£ºSYSclk/2
-	adc_init(ADC_P00, ADC_SYSclk_DIV_2);	//³õÊ¼»¯ADC,P1.1Í¨µÀ £¬ADCÊ±ÖÓÆµÂÊ£ºSYSclk/2
-	adc_init(ADC_P02, ADC_SYSclk_DIV_2);	//³õÊ¼»¯ADC,P1.4Í¨µÀ £¬ADCÊ±ÖÓÆµÂÊ£ºSYSclk/2
-	adc_init(ADC_P15, ADC_SYSclk_DIV_2);	//³õÊ¼»¯ADC,P1.5Í¨µÀ £¬ADCÊ±ÖÓÆµÂÊ£ºSYSclk/2
-	adc_init(ADC_P14, ADC_SYSclk_DIV_2);	//³õÊ¼»¯ADC,P0.6Í¨µÀ £¬ADCÊ±ÖÓÆµÂÊ£ºSYSclk/2
-	adc_init(ADC_P11, ADC_SYSclk_DIV_2);	//³õÊ¼»¯ADC,P1.1Í¨µÀ £¬ADCÊ±ÖÓÆµÂÊ£ºSYSclk/2
-	adc_init(ADC_P05, ADC_SYSclk_DIV_2);	//³õÊ¼»¯ADC,P1.4Í¨µÀ £¬ADCÊ±ÖÓÆµÂÊ£ºSYSclk/2
-	adc_init(ADC_P06, ADC_SYSclk_DIV_2);	//³õÊ¼»¯ADC,P1.5Í¨µÀ £¬ADCÊ±ÖÓÆµÂÊ£ºSYSclk/2
-	delay_ms(10);
+	// åˆå§‹åŒ– PWM
+	pwm_init(MOTOR1, 15000, 0); // åˆå§‹åŒ–ç”µæœº1 PWM
+	pwm_init(MOTOR2, 15000, 0); // åˆå§‹åŒ–ç”µæœº2 PWM
+	delay_ms(10); // å»¶è¿Ÿä»¥ç¡®ä¿åˆå§‹åŒ–å®Œæˆ
 	
-		//µç»úPWMÊä³ö
-//	pwm_init(MOTOR1_CH1,15000,0);		//×óµç»ú   7971
-//	pwm_init(MOTOR1_CH2,15000,0);		//×óµç»ú	
-//	pwm_init(MOTOR2_CH1,15000,0);		//×óµç»ú   7971
-//	pwm_init(MOTOR2_CH2,15000,0);		//×óµç»ú	
-//	delay_ms(10);
+	// åˆå§‹åŒ– IPS æ˜¾ç¤ºå™¨
+	ips114_init(); // åˆå§‹åŒ– IPS æ˜¾ç¤ºå™¨
+	
+	// åˆå§‹åŒ–è®¡æ—¶å™¨
+	ctimer_count_init(MOTOR1_ENCODER); // åˆå§‹åŒ–ç”µæœº1ç¼–ç å™¨
+	ctimer_count_init(MOTOR2_ENCODER); // åˆå§‹åŒ–ç”µæœº2ç¼–ç å™¨
+	delay_ms(30); // å»¶è¿Ÿä»¥ç¡®ä¿åˆå§‹åŒ–å®Œæˆ
+	
+	// åˆå§‹åŒ– Lidar ä¼ æ„Ÿå™¨
+	Lidar1.Address = 0x10; // è®¾ç½® Lidar åœ°å€
+	User_I2C_Init(); // åˆå§‹åŒ– I2C
+	imu660ra_init(); // åˆå§‹åŒ– IMU ä¼ æ„Ÿå™¨
+	target_speed_save = l_target_speed; // ä¿å­˜ç›®æ ‡é€Ÿåº¦
 
-	pwm_init(MOTOR1, 15000, 0);
-	pwm_init(MOTOR2, 15000, 0);
-	delay_ms(10);
-	
-//	//³õÊ¼»¯´®¿Ú
-//	uart_init(UART_2,UART_RX,UART_TX,BOTRATE,UART_TIM);//TIM_2,²¨ÌØÂÊÎª9600
-	
-	//³õÊ¼»¯IPSÆÁÄ»
-		ips114_init();	
-		
-	//±àÂëÆ÷³õÊ¼»¯
-	ctimer_count_init(MOTOR1_ENCODER);
-	ctimer_count_init(MOTOR2_ENCODER);
-	delay_ms(30);
-	
-//²â¾àÄ£¿é³õÊ¼»¯	
-//	while(dl1b_init());
-	//ÍÓÂİÒÇ³õÊ¼»¯
-	//	TF Lidar1;
-	Lidar1.Address = 0x10;
-	User_I2C_Init();
-	imu660ra_init();
-	target_speed_save = l_target_speed;
-
-	return;
+	return; // è¿”å›
 }
 
-
-void get_adc(void)	//ADC»ñÈ¡²¢´¦Àí
+void get_adc(void) // è·å– ADC å€¼
 {
-	int adc_get_value[7] = {0};	
-	int i = 0 ,k = 0;
-	for( i = 0;i < 5;++i)
+	int adc_get_value[ADC_CHANNELS] = {0}; // å­˜å‚¨ ADC è¯»å–å€¼çš„æ•°ç»„
+	for (int i = 0; i < 5; ++i) // è¯»å– 5 æ¬¡ ADC å€¼
 	{
-		adc_get_value[0] += adc_once(ADC0,ADC_10BIT);
-		adc_get_value[1] += adc_once(ADC1,ADC_10BIT);
-		adc_get_value[2] += adc_once(ADC2,ADC_10BIT);
-		adc_get_value[3] += adc_once(ADC3,ADC_10BIT);
-		adc_get_value[4] += adc_once(ADC4,ADC_10BIT);//5
-		adc_get_value[5] += adc_once(ADC5,ADC_10BIT);//6
-		adc_get_value[6] += adc_once(ADC6,ADC_10BIT);//7	
+		for (int j = 0; j < ADC_CHANNELS; ++j) {
+			adc_get_value[j] += adc_once(adc_channels[j], ADC_10BIT); // è¯»å–æ¯ä¸ª ADC é€šé“
+		}
 	}
-	for( k = 0;k < 7;++k)
-	 {
-		 adc[k] = (float)adc_get_value[k] / (5*1000.0f);
-	 }
+	for (int k = 0; k < ADC_CHANNELS; ++k) // è®¡ç®—å¹³å‡å€¼
+	{
+		adc[k] = (float)adc_get_value[k] / (5 * 1000.0f); // å°† ADC å€¼è½¬æ¢ä¸ºæµ®ç‚¹æ•°å¹¶å­˜å‚¨
+	}
 }
 
-
-//--------------------------------¹éÒ»»¯    
-
-////float save_max_adc[7] = {0,0,0,0,0,0,0};
-////float save_min_adc[7] = {10000.0,10000.0,10000.0,10000.0,10000.0,10000.0,10000.0}; 
-
-
-//float save_max_adc[7] = {785, 568, 714, 582, 710, 569, 662};
-//float save_min_adc[7] = {8, 7, 23, 2, 9, 7, 25}; 
-////float save_min_adc[7] = {0};
-//int target_adc = 0;
-
-//void get_adc(void)	//ADC»ñÈ¡²¢´¦Àí
-//{
-//	int adc_get_value[7] = {0};	
-//	int i = 0 ,k = 0;
-//	for( i = 0;i < 5;++i)
-//	{
-//		adc_get_value[0] += adc_once(ADC0,ADC_10BIT);
-//		adc_get_value[1] += adc_once(ADC1,ADC_10BIT);
-//		adc_get_value[2] += adc_once(ADC2,ADC_10BIT);
-//		adc_get_value[3] += adc_once(ADC3,ADC_10BIT);
-//		adc_get_value[4] += adc_once(ADC4,ADC_10BIT);//5
-//		adc_get_value[5] += adc_once(ADC5,ADC_10BIT);//6
-//		adc_get_value[6] += adc_once(ADC6,ADC_10BIT);//7	
-//		
-//	}
-//	
-//	switch (target_adc){
-//			case 0:
-//					
-//					break;
-//			case 1:
-//					if (save_max_adc[0] < adc_once(ADC0,ADC_10BIT)){
-//							save_max_adc[0] = adc_once(ADC0,ADC_10BIT);
-//					}
-//					if(save_min_adc[0] > adc_once(ADC0,ADC_10BIT)){
-//							save_min_adc[0] = adc_once(ADC0,ADC_10BIT);
-//					}
-//					break;
-//			case 2:
-//					if (save_max_adc[1] < adc_once(ADC1,ADC_10BIT)){
-//							save_max_adc[1] = adc_once(ADC1,ADC_10BIT);
-//					}
-//					if(save_min_adc[1] > adc_once(ADC1,ADC_10BIT)){
-//							save_min_adc[1] = adc_once(ADC1,ADC_10BIT);
-//					}
-//					break;
-//			case 3:
-//					if (save_max_adc[2] < adc_once(ADC2,ADC_10BIT)){
-//							save_max_adc[2] = adc_once(ADC2,ADC_10BIT);
-//					}
-//					if(save_min_adc[2] > adc_once(ADC2,ADC_10BIT)){
-//							save_min_adc[2] = adc_once(ADC2,ADC_10BIT);
-//					}
-//					break;
-//			case 4:
-//					if (save_max_adc[3] < adc_once(ADC3,ADC_10BIT)){
-//							save_max_adc[3] = adc_once(ADC3,ADC_10BIT);
-//					}
-//					if(save_min_adc[3] > adc_once(ADC3,ADC_10BIT)){
-//							save_min_adc[3] = adc_once(ADC3,ADC_10BIT);
-//					}
-//					break;
-//			case 5:
-//					if (save_max_adc[4] < adc_once(ADC4,ADC_10BIT)){
-//							save_max_adc[4] = adc_once(ADC4,ADC_10BIT);
-//					}
-//					if(save_min_adc[4] > adc_once(ADC4,ADC_10BIT)){
-//							save_min_adc[4] = adc_once(ADC4,ADC_10BIT);
-//					}
-//					break;
-//			case 6:
-//					if (save_max_adc[5] < adc_once(ADC5,ADC_10BIT)){
-//							save_max_adc[5] = adc_once(ADC5,ADC_10BIT);
-//					}
-//					if(save_min_adc[5] > adc_once(ADC5,ADC_10BIT)){
-//							save_min_adc[5] = adc_once(ADC5,ADC_10BIT);
-//					}
-//					break;
-//			case 7:
-//					if (save_max_adc[6] < adc_once(ADC6,ADC_10BIT)){
-//							save_max_adc[6] = adc_once(ADC6,ADC_10BIT);
-//					}
-//					if(save_min_adc[6] > adc_once(ADC6,ADC_10BIT)){
-//							save_min_adc[6] = adc_once(ADC6,ADC_10BIT);
-//					}
-//					break;
-//			}			
-//	
-//		
-//		for (k = 0; k < 7; k++){
-//				adc[k] = (float)( ((adc_get_value[k] / 5) - save_min_adc[k])  /
-//													(save_max_adc[k] - save_min_adc[k]) 
-//												);
-//		}
-//}
-
-
-
-//-------------------------------
-
-
-
-
-
-
-void gyroOffsetInit(void)     //È¥ÁãÆ¯
+// é™€èºä»ªåç§»åˆå§‹åŒ–
+void gyroOffsetInit(void) 
 {
-	  if(text==0)
+	if (text == 0) // å¦‚æœæ–‡æœ¬æ ‡å¿—ä¸º 0
+	{
+		if (a < 100) // è®¡æ•°å™¨å°äº 100
 		{
-
-				if (a<100) 
-			 {
-					  imu660ra_get_acc();
-            imu660ra_get_gyro();
-						Xdata+=imu660ra_gyro_x;
-//						Ydata+=imu660ra_gyro_y;
-//						Zdata+=imu660ra_gyro_z;
-						delay_ms(5);    // ×î´ó 1Khz
-				    a++;
-//				    ips114_showint16(0,0,a);
-//				 		ips114_showint16(0,7,ips_page);
-				}
-				else if(a ==100)
-				{
-					Xdata *= 0.01;
-//					Ydata *= 0.01;
-//					Zdata *= 0.01;
-//					ips114_clear(WHITE);									//ÇåÆÁ
-					ips_page=1;
-					a++;					
-					text=1;
-//					oled_p8x16str(80,7,"   ");
-//					oled_int16(3,4,text);
-				}
-
-	}
-		else if(text==1)
-		{
-//			imu660ra_get_gyro();
-		imu660ra_get_acc(); 		//»ñÈ¡¼ÓËÙ¶ÈÊı¾İ
-		imu660ra_get_gyro();    	//»ñÈ¡ÍÓÂİÒÇÊı¾İ
-			gyro_x = imu660ra_gyro_transition(imu660ra_gyro_x - Xdata)* alpha+last_gyro_x*(1 - alpha); 
-			last_gyro_x=gyro_x;
-
-//		  duoji();
-//			motor();//µç»úÊ¹ÓÃ
-			
-//			imu660ra_get_acc();
-      
-//			acc_x = (imu660ra_acc_transition(imu660ra_acc_x) * alpha)  + last_acc_x * (1 - alpha);
-//			acc_y = (imu660ra_acc_transition(imu660ra_acc_y) * alpha)  + last_acc_y * (1 - alpha);
-//			acc_z = (imu660ra_acc_transition(imu660ra_acc_z) * alpha)  + last_acc_z * (1 - alpha);
-////			acc_x=(float)imu660ra_acc_x*0.7+last_acc_x*0.3;
-////			acc_y=(float)imu660ra_acc_y*0.7+last_acc_y*0.3;
-////			acc_z=(float)imu660ra_acc_z*0.7+last_acc_z*0.3;
-//			last_acc_x=acc_x;
-//			last_acc_y=acc_y;
-//			last_acc_z=acc_z;
-//			
-
-//			//! ÍÓÂİÒÇ½ÇËÙ¶È±ØĞë×ª»»Îª»¡¶ÈÖÆ½ÇËÙ¶È: deg/s -> rad/s
-
-//			gyro_x = (imu660ra_gyro_transition(imu660ra_gyro_x )-imu660ra_gyro_transition(Xdata ) )* alpha+last_gyro_x* (1 - alpha);
-//			gyro_y = (imu660ra_gyro_transition(imu660ra_gyro_y )-imu660ra_gyro_transition(Ydata ) )* alpha+last_gyro_y* (1 - alpha);
-			
-//			gyro_z = ((float)(imu660ra_gyro_z-Zdata) /65.6 )* (float)alpha+last_gyro_z* (1 - alpha);
-//			
-//			gyro_z = imu660ra_gyro_transition(imu660ra_gyro_z-Zdata ) * alpha+last_gyro_z* (1 - alpha);
-
-//			last_gyro_z=gyro_z;
-//			last_gyro_y=gyro_y;
-
-			
+			imu660ra_get_acc(); // è·å–åŠ é€Ÿåº¦
+			imu660ra_get_gyro(); // è·å–é™€èºä»ªæ•°æ®
+			Xdata += imu660ra_gyro_x; // ç´¯åŠ é™€èºä»ª X è½´æ•°æ®
+			delay_ms(5); // å»¶è¿Ÿ 5 æ¯«ç§’
+			a++; // è®¡æ•°å™¨åŠ  1
 		}
-		
+		else if (a == 100) // å½“è®¡æ•°å™¨ç­‰äº 100
+		{
+			Xdata *= 0.01; // è®¡ç®—å¹³å‡å€¼
+			ips_page = 1; // é‡ç½® IPS é¡µé¢
+			a++; // è®¡æ•°å™¨åŠ  1
+			text = 1; // æ›´æ–°æ–‡æœ¬æ ‡å¿—
+		}
+	}
+	else if (text == 1) // å¦‚æœæ–‡æœ¬æ ‡å¿—ä¸º 1
+	{
+		imu660ra_get_acc(); // è·å–åŠ é€Ÿåº¦
+		imu660ra_get_gyro(); // è·å–é™€èºä»ªæ•°æ®
+		gyro_x = imu660ra_gyro_transition(imu660ra_gyro_x - Xdata) * alpha + last_gyro_x * (1 - alpha); // è®¡ç®—å¹³æ»‘çš„é™€èºä»ª X è½´å€¼
+		last_gyro_x = gyro_x; // æ›´æ–°ä¸Šä¸€ä¸ªé™€èºä»ª X è½´å€¼
+	}
 }
 

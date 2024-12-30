@@ -1,7 +1,7 @@
 #include "headfile.h"
 
 
-	TF Lidar1;
+	TF Lidar1;//tof测距
 
 /**
  * @brief     read luna dist data.

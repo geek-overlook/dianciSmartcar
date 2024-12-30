@@ -73,23 +73,24 @@ void judge(void)
 	
 	flag_circle=YUANHUAN();				//判断左右圆环
 	
-	
+	//---------------------------------------------------------------------		左圆环代码-------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 	if(flag_circle==1 && adc[3]>0.65 &&circle_R==0&&circle_L==0&&flag_shizi==0&&flag_shizi_R==0&&flag_barrier==0 && fabs(error) < 1 && (((cricle_order >> cricle_count_order) & 1)==1|| cricle_order == 20))		//判断左入环
 	{
-		circle_L=1;
+		circle_L=1;//1
 		
 		buzzer=0;	//蜂鸣器开
 		
-		straight_inc=motor_inc;
+		straight_inc=motor_inc;//straight_inc只有在圆环时才会被赋值
 	}
 	
-	
-	if(circle_L==1)
+	//circle_L==1circle_L==1circle_L==1circle_L==1circle_L==1circle_L==1circle_L==1circle_L==1circle_L==1circle_L==1circle_L==1
+	if(circle_L==1)//1
 	{
-		
+		//根据cricle_function_switch的值，选择不同的控制逻辑
 	 if(cricle_function_switch == 0)
 	 {
-		if(motor_inc-straight_inc<=1250)
+		if(motor_inc-straight_inc<=1250)//如果motor_inc - straight_inc 超过 1250 ，电机的实际位置与期望位置或先前位置之间的差异超过了某个预定的阈值。这个阈值我认为是圆环的长度
 		{
 //			error=0.1;
 			x_inc+=gyro_x*0.005;
@@ -100,6 +101,8 @@ void judge(void)
 //			circle_inc=(int)fabs(x_inc);
 			circle_inc=(int)fabs(cir_inc);
 		}
+		
+		
 		else if(motor_inc-straight_inc>1250)
 		{
 			
@@ -138,6 +141,9 @@ void judge(void)
 		}
 	 }
 		
+	 
+	 
+	 //根据cricle_function_switch的值，选择不同的控制逻辑
 	 else if(cricle_function_switch)
 	 {
 		flag_shizi = 0;		//保证圆环内十字不判断
@@ -193,7 +199,7 @@ void judge(void)
 		
 		}
 
-	
+	//circle_L==2circle_L==2circle_L==2circle_L==2circle_L==2circle_L==2circle_L==2circle_L==2circle_L==2circle_L==2circle_L==2
 	if(circle_L==2)
 	{
 		
@@ -578,7 +584,7 @@ float pow2(float w)
 
 
 
-float mask[2][7] = 
+float mask[2][7] = //这些参数怎么拟定的？？？,,手推车
 		{	
 
 		//	0.21,0.065,0.025,0.94,0.244,0.119,0.63,		//第一版//一行左圆环，二行右圆环
@@ -662,9 +668,9 @@ char YUANHUAN(void)//用这个以及电感值去判断处理
 	
 	
 	
-		if(s_r_RYUAN*1000 < HUANDAO_Ryuzhi )
+		if(s_r_RYUAN*1000 < HUANDAO_Ryuzhi )//右入环岛
 				return 2;
-		if(s_r*1000 < HUANDAO_Lyuzhi )
+		if(s_r*1000 < HUANDAO_Lyuzhi )//左入环岛
 				return 1;
 	
 

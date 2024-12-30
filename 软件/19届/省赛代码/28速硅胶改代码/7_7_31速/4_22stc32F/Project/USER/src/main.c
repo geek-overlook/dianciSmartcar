@@ -1,16 +1,16 @@
 /*********************************************************************************************************************
  * COPYRIGHT NOTICE
- * Copyright (c) 2020,Öð·É¿Æ¼¼
+ * Copyright (c) 2020,ï¿½ï¿½É¿Æ¼ï¿½
  * All rights reserved.
- * ¼¼ÊõÌÖÂÛQQÈº£ºÒ»Èº£º179029047(ÒÑÂú)  ¶þÈº£º244861897(ÒÑÂú)  ÈýÈº£º824575535
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½QQÈºï¿½ï¿½Ò»Èºï¿½ï¿½179029047(ï¿½ï¿½ï¿½ï¿½)  ï¿½ï¿½Èºï¿½ï¿½244861897(ï¿½ï¿½ï¿½ï¿½)  ï¿½ï¿½Èºï¿½ï¿½824575535
  *
- * ÒÔÏÂËùÓÐÄÚÈÝ°æÈ¨¾ùÊôÖð·É¿Æ¼¼ËùÓÐ£¬Î´¾­ÔÊÐí²»µÃÓÃÓÚÉÌÒµÓÃÍ¾£¬
- * »¶Ó­¸÷Î»Ê¹ÓÃ²¢´«²¥±¾³ÌÐò£¬ÐÞ¸ÄÄÚÈÝÊ±±ØÐë±£ÁôÖð·É¿Æ¼¼µÄ°æÈ¨ÉùÃ÷¡£
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý°ï¿½È¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¿Æ¼ï¿½ï¿½ï¿½ï¿½Ð£ï¿½Î´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òµï¿½ï¿½Í¾ï¿½ï¿½
+ * ï¿½ï¿½Ó­ï¿½ï¿½Î»Ê¹ï¿½Ã²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ë±£ï¿½ï¿½ï¿½ï¿½É¿Æ¼ï¿½ï¿½Ä°ï¿½È¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  *
  * @file       		main
- * @company	   		³É¶¼Öð·É¿Æ¼¼ÓÐÏÞ¹«Ë¾
- * @author     		Öð·É¿Æ¼¼(QQ790875685)
- * @version    		²é¿´docÄÚversionÎÄ¼þ °æ±¾ËµÃ÷
+ * @company	   		ï¿½É¶ï¿½ï¿½ï¿½É¿Æ¼ï¿½ï¿½ï¿½ï¿½Þ¹ï¿½Ë¾
+ * @author     		ï¿½ï¿½É¿Æ¼ï¿½(QQ790875685)
+ * @version    		ï¿½é¿´docï¿½ï¿½versionï¿½Ä¼ï¿½ ï¿½æ±¾Ëµï¿½ï¿½
  * @Software 		MDK FOR C251 V5.60
  * @Target core		STC32
  * @Taobao   		https://seekfree.taobao.com/
@@ -19,9 +19,9 @@
  ********************************************************************************************************************/
 #include "headfile.h"
 
-// ¹ØÓÚÄÚºËÆµÂÊµÄÉè¶¨£¬¿ÉÒÔ²é¿´board.hÎÄ¼þ
-// ÔÚboard_initÖÐ,ÒÑ¾­½«P54Òý½ÅÉèÖÃÎª¸´Î»
-// Èç¹ûÐèÒªÊ¹ÓÃP54Òý½Å,¿ÉÒÔÔÚboard.cÎÄ¼þÖÐµÄboard_init()º¯ÊýÖÐÉ¾³ýSET_P54_RESRT¼´¿É
+// ï¿½ï¿½ï¿½ï¿½ï¿½Úºï¿½Æµï¿½Êµï¿½ï¿½è¶¨ï¿½ï¿½ï¿½ï¿½ï¿½Ô²é¿´board.hï¿½Ä¼ï¿½
+// ï¿½ï¿½board_initï¿½ï¿½,ï¿½Ñ¾ï¿½ï¿½ï¿½P54ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½Î»
+// ï¿½ï¿½ï¿½ï¿½ï¿½ÒªÊ¹ï¿½ï¿½P54ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½board.cï¿½Ä¼ï¿½ï¿½Ðµï¿½board_init()ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½SET_P54_RESRTï¿½ï¿½ï¿½ï¿½
 
 //char page_buf[60];
 
@@ -30,34 +30,34 @@ int OLED_Open = 1;
 
 void main()
 {
-	DisableGlobalIRQ();						//¹Ø±ÕEA
-	clock_init(SYSTEM_CLOCK_52M);	// ³õÊ¼»¯ÏµÍ³ÆµÂÊ,ÎðÉ¾³ý´Ë¾ä´úÂë¡£
-	board_init();					// ³õÊ¼»¯¼Ä´æÆ÷,ÎðÉ¾³ý´Ë¾ä´úÂë¡£
+	DisableGlobalIRQ();						//ï¿½Ø±ï¿½EA
+	clock_init(SYSTEM_CLOCK_52M);	// ï¿½ï¿½Ê¼ï¿½ï¿½ÏµÍ³Æµï¿½ï¿½,ï¿½ï¿½É¾ï¿½ï¿½ï¿½Ë¾ï¿½ï¿½ï¿½ë¡£
+	board_init();					// ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½Ä´ï¿½ï¿½ï¿½,ï¿½ï¿½É¾ï¿½ï¿½ï¿½Ë¾ï¿½ï¿½ï¿½ë¡£
 
-    // ´Ë´¦±àÐ´ÓÃ»§´úÂë ÀýÈçÍâÉè³õÊ¼»¯´úÂëµÈ
-	car_pre_init();					//ÖÇÄÜ³µÍâÉè³õÊ¼»¯
+    // ï¿½Ë´ï¿½ï¿½ï¿½Ð´ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	car_pre_init();					//ï¿½ï¿½ï¿½Ü³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
 	
-	pit_timer_ms(TIM_1,5);				// Ê¹ÓÃTIMER×÷ÎªÖÜÆÚÖÐ¶Ï£¬Ê±¼ä5msÒ»´Î
-														// pitÖÜÆÚÖÐ¶ÏÖ»Ö§³Ö0-10ms
-    // ´Ë´¦±àÐ´ÓÃ»§´úÂë ÀýÈçÍâÉè³õÊ¼»¯´úÂëµÈ
+	pit_timer_ms(TIM_1,5);				// Ê¹ï¿½ï¿½TIMERï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï£ï¿½Ê±ï¿½ï¿½5msÒ»ï¿½ï¿½
+														// pitï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½Ö»Ö§ï¿½ï¿½0-10ms
+    // ï¿½Ë´ï¿½ï¿½ï¿½Ð´ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-	EnableGlobalIRQ();		//¿ªÆô×ÜÖÐ¶Ï
+	EnableGlobalIRQ();		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
 
 	
 	
     while(1)
     {
 			
-//		// ´Ë´¦±àÐ´ÐèÒªÑ­»·Ö´ÐÐµÄ´úÂë
+//		// ï¿½Ë´ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ÒªÑ­ï¿½ï¿½Ö´ï¿½ÐµÄ´ï¿½ï¿½ï¿½
 
 			
-			key();
-			
-			IPS();
+//			key();999
+//			
+//			IPS();
 //			printf("%lf,%lf\n",l_speed,l_target_speed);
 			
 //					printf("acc.z=%d\r\n",  imu660ra_acc_z);
-		//ÔÚ1.14IPSÆÁÄ»ÉÏÏÔÊ¾£¬ÐèÒª³õÊ¼»¯1.14´çipsÆÁÄ»£¬²ÅÄÜÊ¹ÓÃ¡£
+		//ï¿½ï¿½1.14IPSï¿½ï¿½Ä»ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½Ê¼ï¿½ï¿½1.14ï¿½ï¿½ipsï¿½ï¿½Ä»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½Ã¡ï¿½
 
 
     }

@@ -1,12 +1,12 @@
-C251 COMPILER V5.60.0,  main                                                               15/07/24  23:30:48  PAGE 1   
+C251 COMPILER V5.60.0,  main                                                               19/12/24  21:12:34  PAGE 1   
 
 
 C251 COMPILER V5.60.0, COMPILATION OF MODULE main
 OBJECT MODULE PLACED IN .\Out_File\main.obj
-COMPILER INVOKED BY: D:\c51-keil\C251\BIN\C251.EXE ..\USER\src\main.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE IN
-                    -CDIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\in
-                    -c;..\USER\src;..\..\Libraries\seekfree_components;.\Out_File) DEBUG PRINT(.\Out_File\main.lst) TABS(2) OBJECT(.\Out_File
-                    -\main.obj) 
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE ..\USER\src\main.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INC
+                    -DIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc
+                    -;..\USER\src;..\..\Libraries\seekfree_components;.\Out_File) DEBUG PRINT(.\Out_File\main.lst) TABS(2) OBJECT(.\Out_File\
+                    -main.obj) 
 
 stmt  level    source
 
@@ -66,7 +66,7 @@ stmt  level    source
    52   2      
    53   2            
    54   2            key();
-C251 COMPILER V5.60.0,  main                                                               15/07/24  23:30:48  PAGE 2   
+C251 COMPILER V5.60.0,  main                                                               19/12/24  21:12:34  PAGE 2   
 
    55   2            
    56   2            IPS();

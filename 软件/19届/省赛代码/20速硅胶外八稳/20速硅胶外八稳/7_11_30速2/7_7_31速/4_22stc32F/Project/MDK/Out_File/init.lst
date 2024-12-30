@@ -1,12 +1,12 @@
-C251 COMPILER V5.60.0,  init                                                               15/07/24  23:30:47  PAGE 1   
+C251 COMPILER V5.60.0,  init                                                               19/12/24  21:12:31  PAGE 1   
 
 
 C251 COMPILER V5.60.0, COMPILATION OF MODULE init
 OBJECT MODULE PLACED IN .\Out_File\init.obj
-COMPILER INVOKED BY: D:\c51-keil\C251\BIN\C251.EXE Out_File\init.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCDI
-                    -R(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc;.
-                    -.\USER\src;..\..\Libraries\seekfree_components;.\Out_File) DEBUG PRINT(.\Out_File\init.lst) TABS(2) OBJECT(.\Out_File\in
-                    -it.obj) 
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE Out_File\init.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCDIR
+                    -(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc;..
+                    -\USER\src;..\..\Libraries\seekfree_components;.\Out_File) DEBUG PRINT(.\Out_File\init.lst) TABS(2) OBJECT(.\Out_File\ini
+                    -t.obj) 
 
 stmt  level    source
 
@@ -66,7 +66,7 @@ stmt  level    source
    54   1        adc_init(ADC_P15, ADC_SYSclk_DIV_2);  //初始化ADC,P1.5通道 ，ADC时钟频率：SYSclk/2
    55   1        adc_init(ADC_P14, ADC_SYSclk_DIV_2);  //初始化ADC,P0.6通道 ，ADC时钟频率：SYSclk/2
    56   1        adc_init(ADC_P11, ADC_SYSclk_DIV_2);  //初始化ADC,P1.1通道 ，ADC时钟频率：SYSclk/2
-C251 COMPILER V5.60.0,  init                                                               15/07/24  23:30:47  PAGE 2   
+C251 COMPILER V5.60.0,  init                                                               19/12/24  21:12:31  PAGE 2   
 
    57   1        adc_init(ADC_P05, ADC_SYSclk_DIV_2);  //初始化ADC,P1.4通道 ，ADC时钟频率：SYSclk/2
    58   1        adc_init(ADC_P06, ADC_SYSclk_DIV_2);  //初始化ADC,P1.5通道 ，ADC时钟频率：SYSclk/2
@@ -134,7 +134,7 @@ stmt  level    source
   120          ////float save_min_adc[7] = {10000.0,10000.0,10000.0,10000.0,10000.0,10000.0,10000.0}; 
   121          
   122          
-C251 COMPILER V5.60.0,  init                                                               15/07/24  23:30:47  PAGE 3   
+C251 COMPILER V5.60.0,  init                                                               19/12/24  21:12:31  PAGE 3   
 
   123          //float save_max_adc[7] = {785, 568, 714, 582, 710, 569, 662};
   124          //float save_min_adc[7] = {8, 7, 23, 2, 9, 7, 25}; 
@@ -202,7 +202,7 @@ stmt  level    source
   186          //          }
   187          //          break;
   188          //      case 6:
-C251 COMPILER V5.60.0,  init                                                               15/07/24  23:30:47  PAGE 4   
+C251 COMPILER V5.60.0,  init                                                               19/12/24  21:12:31  PAGE 4   
 
   189          //          if (save_max_adc[5] < adc_once(ADC5,ADC_10BIT)){
   190          //              save_max_adc[5] = adc_once(ADC5,ADC_10BIT);
@@ -238,11 +238,11 @@ stmt  level    source
   220          
   221          
   222          
-  223          void gyroOffsetInit(void)     //去零漂
+  223          void gyroOffsetInit(void)     //去零漂，
   224          {
   225   1          if(text==0)
   226   1          {
-  227   2      
+  227   2              //连续读取100次陀螺仪的X轴数据
   228   2              if (a<100) 
   229   2             {
   230   3                  imu660ra_get_acc();
@@ -257,7 +257,7 @@ stmt  level    source
   239   3              }
   240   2              else if(a ==100)
   241   2              {
-  242   3                Xdata *= 0.01;
+  242   3                Xdata *= 0.01;  //当读取完100次后，Xdata 被除以100（即乘以0.01），以得到平均偏移量
   243   3      //          Ydata *= 0.01;
   244   3      //          Zdata *= 0.01;
   245   3      //          ips114_clear(WHITE);                  //清屏
@@ -270,7 +270,7 @@ stmt  level    source
   252   2      
   253   2        }
   254   1          else if(text==1)
-C251 COMPILER V5.60.0,  init                                                               15/07/24  23:30:47  PAGE 5   
+C251 COMPILER V5.60.0,  init                                                               19/12/24  21:12:31  PAGE 5   
 
   255   1          {
   256   2      //      imu660ra_get_gyro();

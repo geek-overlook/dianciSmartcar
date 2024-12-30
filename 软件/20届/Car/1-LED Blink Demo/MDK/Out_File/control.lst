@@ -1,0 +1,177 @@
+C251 COMPILER V5.60.0,  control                                                            30/12/24  14:01:20  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE control
+OBJECT MODULE PLACED IN .\Out_File\control.obj
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE control.c LARGE WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCDIR(..\..\
+                    -Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc;..\USER\s
+                    -rc;..\..\Libraries\seekfree_components;..\USER\inc;..\USER\src;..\MDK) DEBUG PRINT(.\Out_File\control.lst) TABS(2) OBJEC
+                    -T(.\Out_File\control.obj) 
+
+stmt  level    source
+
+    1          #include "headfile.h"
+    2          #include "control.h"
+    3          
+    4          
+    5          //adc获取值
+    6          float adc[11]={0} ;
+    7          
+    8          //IMU自检状态
+    9          int IMU_state=100;
+   10          
+   11          int Key_testNum=100;
+   12          
+   13          
+   14          void car_init(void){
+   15   1            
+   16   1            //lcd初始化
+   17   1            lcd_init();  
+   18   1            lcd_clear(WHITE); 
+   19   1            
+   20   1            //按键配置上拉电阻
+   21   1            gpio_pull_set(P70,PULLUP);
+   22   1            gpio_pull_set(P71,PULLUP);
+   23   1            gpio_pull_set(P72,PULLUP);
+   24   1            gpio_pull_set(P73,PULLUP);
+   25   1            gpio_pull_set(P75,PULLUP);
+   26   1            
+   27   1            //拨码开关控制屏幕输出
+   28   1            gpio_pull_set(P37,PULLUP);
+   29   1        
+   30   1            //编码器初始化
+   31   1            ctimer_count_init(MOTOR1_ENCODER);
+   32   1            ctimer_count_init(MOTOR2_ENCODER);
+   33   1            delay_ms(30);
+   34   1            
+   35   1            //PWM初始化
+   36   1            pwm_init(MOTOR1, 15000, 0);
+   37   1            pwm_init(MOTOR2, 15000, 0);
+   38   1            delay_ms(10);
+   39   1            
+   40   1            //初始化ADC
+   41   1            adc_init(ADC_P01, ADC_SYSclk_DIV_2);  //初始化ADC,P0.6通道 ，ADC时钟频率：SYSclk/2
+   42   1            adc_init(ADC_P00, ADC_SYSclk_DIV_2);  //初始化ADC,P1.1通道 ，ADC时钟频率：SYSclk/2
+   43   1            adc_init(ADC_P02, ADC_SYSclk_DIV_2);  //初始化ADC,P1.4通道 ，ADC时钟频率：SYSclk/2
+   44   1            adc_init(ADC_P15, ADC_SYSclk_DIV_2);  //初始化ADC,P1.5通道 ，ADC时钟频率：SYSclk/2
+   45   1            adc_init(ADC_P14, ADC_SYSclk_DIV_2);  //初始化ADC,P0.6通道 ，ADC时钟频率：SYSclk/2
+   46   1            adc_init(ADC_P11, ADC_SYSclk_DIV_2);  //初始化ADC,P1.1通道 ，ADC时钟频率：SYSclk/2
+   47   1            adc_init(ADC_P05, ADC_SYSclk_DIV_2);  //初始化ADC,P1.4通道 ，ADC时钟频率：SYSclk/2
+   48   1            adc_init(ADC_P06, ADC_SYSclk_DIV_2);  //初始化ADC,P1.5通道 ，ADC时钟频率：SYSclk/2
+   49   1            delay_ms(10);
+   50   1            //陀螺仪初始化
+   51   1            imu660ra_init();
+   52   1            
+   53   1            
+   54   1            
+   55   1            //抽象层初始化
+   56   1            PID_init(&mr_pid);
+C251 COMPILER V5.60.0,  control                                                            30/12/24  14:01:20  PAGE 2   
+
+   57   1            PID_init(&ml_pid);
+   58   1            
+   59   1            PID_init(&R_pid);       //速度环
+   60   1            PID_init(&L_pid);
+   61   1            
+   62   1            PID_init(&Turn_PID);
+   63   1            
+   64   1      }
+   65          
+   66          
+   67          
+   68          /*
+   69          按键检测程序
+   70          mode:
+   71          控制按键状态是否重置。
+   72          mode = 1: 重置按键状态为未按下。
+   73          mode = 0: 正常检测按键状态
+   74          */
+   75          uint8 key_scan(int mode) {
+   76   1            
+   77   1          static unsigned int key = 1; // 按键状态，1表示未按下，0表示已按下
+   78   1      
+   79   1          if (mode)key = 1; // 如果模式为真，重置按键状态为未按下
+   80   1      
+   81   1          // 检测按键按下
+   82   1          if (key == 1 && (P70 == 0 || P71 == 0 || P72 == 0 || P73 == 0 || P75 == 0)) {
+   83   2              delay_ms(10); // 消抖处理
+   84   2              key = 0; // 设置为已按下状态
+   85   2      
+   86   2              // 检测具体哪个按键被按下
+   87   2              if (P70 == 0) return 1; // 返回1表示按下P7_0
+   88   2              else if (P71 == 0) return 2; // 返回2表示按下P7_1
+   89   2              else if (P72 == 0) return 3; // 返回3表示按下P7_2
+   90   2              else if (P73 == 0) return 4; // 返回4表示按下P7_3
+   91   2              else if (P75 == 0) return 5; // 返回5表示按下P7_5
+   92   2          }
+   93   1          // 检测所有按键释放
+   94   1          else if (P70 == 1 && P71 == 1 && P72 == 1 && P73 == 1 && P75 == 1) {
+   95   2              key = 1; // 重置为未按下状态
+   96   2          }
+   97   1      
+   98   1          return 0; // 没有按键被按下
+   99   1                
+  100   1      }
+  101          
+  102          /*
+  103          *ADC获取并处理
+  104          */
+  105          
+  106          void get_adc(void)  
+  107          {
+  108   1      
+  109   1        int i = 0 ,k = 0;
+  110   1        int adc_get_value[7] = {0}; 
+  111   1      
+  112   1        for( i = 0;i < 5;++i)
+  113   1        {
+  114   2          adc_get_value[0] += adc_once(ADC0,ADC_10BIT);
+  115   2          adc_get_value[1] += adc_once(ADC1,ADC_10BIT);
+  116   2          adc_get_value[2] += adc_once(ADC2,ADC_10BIT);
+  117   2          adc_get_value[3] += adc_once(ADC3,ADC_10BIT);
+  118   2          adc_get_value[4] += adc_once(ADC4,ADC_10BIT);//5
+  119   2          adc_get_value[5] += adc_once(ADC5,ADC_10BIT);//6
+  120   2          adc_get_value[6] += adc_once(ADC6,ADC_10BIT);//7  
+  121   2        }
+  122   1        for( k = 0;k < 7;++k)
+C251 COMPILER V5.60.0,  control                                                            30/12/24  14:01:20  PAGE 3   
+
+  123   1         {
+  124   2           adc[k] = (float)adc_get_value[k] / (5*1000.0f);
+  125   2         }
+  126   1      }
+  127          
+  128          //
+  129          
+  130          /*当拨码开关打上，屏幕菜单关闭运行
+  131          *
+  132          */
+  133          void Screen_Control(void) {
+  134   1          if(Screen_switch==0)
+  135   1          {   key_process();
+  136   2          lcd_choice_function();}
+  137   1      }
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =       897     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =        70     ------
+  xdata-const size     =    ------     ------
+  edata size           =    ------     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =        84     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

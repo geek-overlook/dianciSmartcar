@@ -1,12 +1,12 @@
-C251 COMPILER V5.60.0,  seekfree_assistant_inface                                          15/07/24  23:32:11  PAGE 1   
+C251 COMPILER V5.60.0,  seekfree_assistant_inface                                          28/11/24  18:50:42  PAGE 1   
 
 
 C251 COMPILER V5.60.0, COMPILATION OF MODULE seekfree_assistant_inface
 OBJECT MODULE PLACED IN .\Out_File\seekfree_assistant_inface.obj
-COMPILER INVOKED BY: D:\c51-keil\C251\BIN\C251.EXE ..\..\Libraries\seekfree_components\seekfree_assistant_inface.c XSMAL
-                    -L WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCDIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Lib
-                    -raries\seekfree_peripheral;..\CODE;..\USER\inc;..\USER\src;..\..\Libraries\seekfree_components;.\Out_File) DEBUG PRINT(.
-                    -\Out_File\seekfree_assistant_inface.lst) TABS(2) OBJECT(.\Out_File\seekfree_assistant_inface.obj) 
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE ..\..\Libraries\seekfree_components\seekfree_assistant_inface.c XSMALL
+                    - WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCDIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libr
+                    -aries\seekfree_peripheral;..\CODE;..\USER\inc;..\USER\src;..\..\Libraries\seekfree_components;.\Out_File) DEBUG PRINT(.\
+                    -Out_File\seekfree_assistant_inface.lst) TABS(2) OBJECT(.\Out_File\seekfree_assistant_inface.obj) 
 
 stmt  level    source
 

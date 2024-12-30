@@ -220,11 +220,11 @@ void get_adc(void)	//ADC获取并处理
 
 
 
-void gyroOffsetInit(void)     //去零漂
+void gyroOffsetInit(void)     //去零漂，
 {
 	  if(text==0)
 		{
-
+				//连续读取100次陀螺仪的X轴数据
 				if (a<100) 
 			 {
 					  imu660ra_get_acc();
@@ -239,7 +239,7 @@ void gyroOffsetInit(void)     //去零漂
 				}
 				else if(a ==100)
 				{
-					Xdata *= 0.01;
+					Xdata *= 0.01;	//当读取完100次后，Xdata 被除以100（即乘以0.01），以得到平均偏移量
 //					Ydata *= 0.01;
 //					Zdata *= 0.01;
 //					ips114_clear(WHITE);									//清屏

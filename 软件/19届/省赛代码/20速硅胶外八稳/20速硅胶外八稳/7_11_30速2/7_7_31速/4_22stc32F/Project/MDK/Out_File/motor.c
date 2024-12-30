@@ -2,13 +2,15 @@
 
 int r_encoder =0;
 int l_encoder =0;
-float r_target_speed = 20.0;
-float l_target_speed = 20.0;
+//左右轮速度
+float r_target_speed = 16.0;
+float l_target_speed = 16.0;
 
 float r_last_speed=0;
 float angle_speed=0;
 float turn_speed=0;
-float set_turn=0.37;
+
+float set_turn=0.37;//？？？
 float forward_flag=0.17;
 
 //float fab_l_speed=0;
@@ -31,9 +33,10 @@ float T=0.005;
 float last_in_turn=0;
 void motor(void)
 {
+	//编码器读取位移
 	l_encoder = ctimer_count_read(MOTOR1_ENCODER);
 	r_encoder = ctimer_count_read(MOTOR2_ENCODER);
-	
+	//读数归零
 	ctimer_count_clean(CTIM0_P34);
 	ctimer_count_clean(CTIM3_P04);
 	
@@ -50,6 +53,7 @@ void motor(void)
 	
 //	fab_r_speed = (float)r_encoder / 1024.0f * 200.0f ;
 //	fab_l_speed = (float)l_encoder / 1024.0f * 200.0f ;		//计算出1s多少转
+	
 	if(MOTOR1_DIR == 0)																			//计算出1s多少转以及正反转
 	{
 		l_speed = (float)l_encoder / 1024.0f * 200.0f ;
@@ -101,7 +105,7 @@ void motor(void)
 			{
 				r_endspeed=r_target_speed+angle_speed -turn_speed*set_turn;
 				l_endspeed=l_target_speed-angle_speed +turn_speed*(1.0-set_turn);
-				
+				//？？为什么要通过这个来选择pid 12.5   速度不同，所需要的pid也不一样
 				r_error=r_endspeed-r_speed;
 				l_error=l_endspeed-l_speed;
 				multistage_pid();
@@ -218,9 +222,6 @@ void motor(void)
 		
 	
 }
-
-
-
 
 
 void multistage_pid(void)
@@ -355,6 +356,11 @@ float forwardfeed_R(float inc_in)
 }
 
 
+
+/**
+		滤波函数
+		？？？这个系数会带来什么效果
+***/
 float forwardfeed_turn(float inc_in)				
 {
 	float inc_out;

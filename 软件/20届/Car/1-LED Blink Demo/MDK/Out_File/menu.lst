@@ -1,0 +1,701 @@
+C251 COMPILER V5.60.0,  menu                                                               30/12/24  14:01:20  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE menu
+OBJECT MODULE PLACED IN .\Out_File\menu.obj
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE menu.c LARGE WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCDIR(..\..\Lib
+                    -raries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc;..\USER\src;
+                    -..\..\Libraries\seekfree_components;..\USER\inc;..\USER\src;..\MDK) DEBUG PRINT(.\Out_File\menu.lst) TABS(2) OBJECT(.\Ou
+                    -t_File\menu.obj) 
+
+stmt  level    source
+
+    1          #include "headfile.h"
+    2          #include "control.h"
+    3          #include "Menu.h"
+    4          #include "PID.h"
+    5          #include "MENU_DATA.h"
+    6          
+    7          
+    8          
+    9          
+   10          
+   11          //°´¼ü
+   12          //¿í¶È120£¬¸ß¶È140
+   13          
+   14          uint8 show_flag,last_show;
+   15          uint8 key_last,key_down;
+   16          uint8 key_val;
+   17          //ÓÐË¢
+   18          
+   19          //int32 encoder_Sum1=0,encoder_Sum2=0;
+   20          float Y_distance,Y_distance2;//¾àÀë
+   21          
+   22          //ÔËÐÐÊ±¼ä
+   23          int32 time1,time2,time;
+   24          
+   25          #define up     1
+   26          #define down   2
+   27          #define left   3
+   28          #define right  4
+   29          #define mid_b    5
+   30          #define bluetwo   6 //Æô¶¯°´¼ü
+   31          #define blueone   7
+   32          
+   33          int num_up_dowm_one;//Ò»¼¶²Ëµ¥ÉÏÏÂÒÆ¶¯
+   34          int num_up_dowm_two;//¶þ¼¶²Ëµ¥ÉÏÏÂÒÆ¶¯
+   35          int num_up_dowm_three;//Èý¼¶²Ëµ¥ÉÏÏÂÒÆ¶¯
+   36          int num_right_left_flag=2;//¼Ó¼õÊýÖµ±êÖ¾Î»£¬1¿É¼Ó£¬0¿É¼õ·¨£¬2ËøËÀ
+   37          int num_choice_confirm[5]={0,0,0,0,0};//°´ÏÂÈ·ÈÏËøËÀ±êÖ¾Î»£¬Êý×é·ÖÎª²»Í¬²Ëµ¥µÄ°´ÏÂÈ·ÈÏ£¬1Ò»¼¶²Ëµ¥ËøËÀ£¬2¶
+             -þ¼¶²Ëµ¥ËøËÀ£¬3Èý¼¶²Ëµ¥ËøËÀ£¬4ËÄ¼¶
+   38          uint8 clear_menu_flag=0;//»»²Ëµ¥µÄÊ±ºòÇå¿ÕÇ°ÃæµÄ²Ëµ¥
+   39          //uint8 first_menu_flag=1;//»»¶þ¼¶²Ëµ¥µÄÊ±ºò£¬Ö»ÈÃÒ»¼¶²Ëµ¥ÏÔÊ¾Ò»´Î
+   40          uint8 menu_show_flag[15]={1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+   41          
+   42          uint8 first_confirm_flag=1;//Ò»¼¶²Ëµ¥µÄÉÏÏÂËøËÀ±êÖ¾Î»£¬0ËøËÀ£¬1¿É¼Ó¼õ
+   43          uint8 mid_change=0;//°´ÏÂÈ·ÈÏ¼üµÄ²Ëµ¥¸Ä±ä±êÖ¾£¬ÓÃÓÚÊý×éµÄÑ¡Ôñ£¬0-Ò»¼¶²Ëµ¥£¬1-¶þ¼¶£¬2-Èý¼¶
+   44          uint8 second_confirm_flag=0;//¶þ¼¶²Ëµ¥ËøËÀ±êÖ¾Î»0ËøËÀ£¬1¿É¼Ó¼õ
+   45          uint8 thrid_confirm_flag=0;//Èý¼¶²Ëµ¥ËøËÀ±êÖ¾Î»0ËøËÀ£¬1¿É¼Ó¼õ
+   46          
+   47          uint8 symbol_flag_show[3]={0};
+   48          uint8 symbol_flag_show1=1;//Ò»>ÏÔÊ¾
+   49          uint8 symbol_flag_show2=1;//¶þ>ÏÔÊ¾
+   50          uint8 symbol_flag_show3=1;//Èý>ÏÔÊ¾
+   51          uint8 symbol_flag_show4=1;//ËÄ>ÏÔÊ¾
+   52          uint8 symbol_flag_show5=1;//ËÄ>ÏÔÊ¾
+   53          
+   54          uint8 first_y=1;
+   55          uint8 first_x=3;
+C251 COMPILER V5.60.0,  menu                                                               30/12/24  14:01:20  PAGE 2   
+
+   56          
+   57          int menu_limt[3] = {6,0,0};
+   58          
+   59          void show_meun(int choice,int meun_num);
+   60          void show_data(void);
+   61          uint8 last_show_flag;
+   62          
+   63          
+   64          
+   65          
+   66          
+   67           
+   68          #define MainMenu_num 6
+   69          int car_start=1;
+   70          int num_right_left=1;//¼Ó¼õÊýÖµÊý
+   71          int layer[2]= {1,5};
+   72          int layer_last[2]= {0,0};
+   73          
+   74          
+   75          /*y·¶Î§80-150£¬x·¶Î§10-120*/
+   76          void lcd_choice_function()//ÏÔÊ¾²ÎÊýÃûÒÔ¼°ÊýÖµ
+   77          {
+   78   1          /*ÏÔÊ¾¼¶Êý£¬³ÉÔ±ÊýÁ¿*/
+   79   1          show_meun(layer[0],6);
+   80   1          show_data();
+   81   1      }
+   82          
+   83          // *****************ÁÙÊ±±äÁ¿********************//
+   84          int cross_dir[10] = {0};  //0Ö±×ß£¬1×ó×ª£¬2ÓÒ×ª
+   85          //int Rmid_thr=IMGW-1-35,Lmid_thr=30;
+   86          float end_angle,start_angle,none_distance;
+   87          /*¶ÏÂ·*/
+   88          float end_angle1,end_angle2,end_angle3;
+   89          float none_distance1,none_distance2,none_distance3;
+   90          /*Â·ÕÏ*/
+   91          int Barrier_limit1=30,Barrier_limit2=-40;
+   92          float gain1=160,gain2=80;
+   93          int Zebra_dir,end_num=60;
+   94          float Zebra_speed = 2000;
+   95          float acc=10;
+   96          int none_test;
+   97          float NYaw,NDis,NSpeed,Nerrlim;
+   98          int _180du;
+   99          float k_e1,k_e2,k_e3,k_e4,k_e5;
+  100          int firing_flag = 0,image_flag=0,wifi_flag=0;
+  101          
+  102          //ÁÙÊ±±äÁ¿Çø
+  103          int start_speed=0;
+  104          int front_dot_s;
+  105          int k_lost;
+  106          int speed_chose;
+  107          
+  108          
+  109          /*ÉãÏñÍ·²ÎÊý*/
+  110          int Mt9v_exp=150,Mt9v_gain=20;//ÆØ¹âºÍÔöÒæ
+  111          int speed_chose = 3;
+  112          float speed_val[8]={
+  113                  2000,2300,2500,2700,2800,2900,3000,3100
+  114          };
+  115          
+  116          /*ÄÃ¸ö²¦Âë¿ª¹ØÀ´¾ö¶¨³µµÄµç»ú
+  117           * »¹ÓÐ¿´Ô²»·µÄ£¬¿´Ê®×Ö£¬¿´Â·ÕÏµÄ£¬¿ìËÙÇÐ»»ÓÃ*/
+  118          /*Ö÷²Ëµ¥*/
+  119          const char* MainMenu_lable[10]={
+  120             "Img","Speed","PID","Nstart","Otsu","Start"
+  121          };
+C251 COMPILER V5.60.0,  menu                                                               30/12/24  14:01:20  PAGE 3   
+
+  122          
+  123          const char* _2Menu_lable[10][10]={
+  124                  { "show_image","Wifi","front","k_lost","S_mode","return"}, /*ÓÐÏÂÒ»¼¶*/
+  125                  { "return"  },
+  126                  { "G_PID", "W_PID","T_PID", "S_PID","Servo_P","return"},                  /*ÓÐÏÂÒ»¼¶*/
+  127                  { "Cross", "Circle","Ramp","Barrier","center_s","return" },
+  128                  {"Lthres","Hthres","return" }//ÏÂÏÞãÐÖµ
+  129          };
+  130          
+  131          const char* _3Menu_lable[20][10]={
+  132                  /*********************ÔªËØ********************/
+  133                  { "Gyroy.kp","Gyroy.ki","return"},                               /*½ÇËÙ¶È*/
+  134                  { "WPitch.kp", "WPitch.kd","return"},              /*½Ç¶È*/
+  135                  { "ramp", "common","circle","turn","RT","Yaw.kp","Turn.kp","return"},                /*×ªÏò*/
+  136                  { "Speed.kp", "Speed.kd","return"},              /*ÇúÏß¼õËÙ*/
+  137                  {"Servo_P","return"},            /*³µ¿â*/
+  138                  { "front_s","return"}                                /*¼ÓËÙ¶È*/
+  139          
+  140                  /*********************PID********************/
+  141          };
+  142          
+  143          
+  144          
+  145          
+  146          //Õû¸ö²Ëµ¥µÄ×ÜÌåÂß¼­ÊÇ°´¼üÍ¨¹ýkey_process()º¯Êýlcd_choice_functionº¯ÊýÏÔÊ¾²ÎÊýÃûÒÔ¼°ÊýÖµ,ÈçÏÂ
+  147          
+  148              // while (TRUE)
+  149              // {
+  150              //     key_process();//°´¼ü¸ü¸Älayer[0],layer[1],Í¨¹ýadjustº¯ÊýÐÞ¸Ä²ÎÊý
+  151              //     if(firing_flag==0)
+  152              //     {
+  153              //         lcd_choice_function();//ÏÔÊ¾²ÎÊýÃûÒÔ¼°ÊýÖµ
+  154              //     }
+  155              // }
+  156          
+  157          
+  158          
+  159          
+  160          
+  161          //lcd_choice_functionÖÐÓÐshow_menuºÍshow_dataÁ½¸öº¯Êý£¬show_menuÔÚÆÁÄ»×ó²àÏÔÊ¾²ÎÊýÃû£¬show_dataÔÚÓÒ²àÏÔÊ¾
+             -ÆäÊýÖµµÄ£¨ÀýÈçshow_menuÖÐÔÚ×ó²àÏÔÊ¾X,show_dataÔÚÓÒ²àÏÔÊ¾1£¬´ú±íX=1£©
+  162          //key_processÖÐ£¬µ±key_downµÄÖµÎª"up"»ò"down"Ê±£¬¿ØÖÆlayer[1]µÄ¼Ó¼õÀ´¿ØÖÆ">"µÄ¹â±êÏÔÊ¾ÔÚµÚ¼¸ÐÐ£¬µ±key_dow
+             -nµÄÖµÎª"left"ºÍ"right"Ê±£¬µ÷ÓÃadjustÕâ¸öº¯Êý
+  163          //À´¿ØÖÆ²ÎÊýµÄ¼Ó¼õ²¢½«Ëü´æ´¢ÓÚflashÖÐ,µ±key_downµÄÖµÎªmid_bÊ±£¬»áÍ¨¹ý¹â±êµÄÎ»ÖÃÀ´Ñ¡ÔñÍË»ØÉÏÒ»¼¶²Ëµ¥»¹ÊÇ½ø
+             -ÈëÏÂÒ»¼¶²Ëµ¥
+  164          
+  165          
+  166          
+  167          
+  168          //layer[0]µÄÖµ±íÊ¾ÏÖÔÚÎª¼¸¼¶²Ëµ¥£¬µÈÓÚÒ»¾ÍÊÇÒ»¼¶²Ëµ¥;layer[1]±íÊ¾µ±Ç°¹â±êÔÚµÚ¼¸ÐÐ
+  169          //ÏÔÊ¾¹â±êµÄÂß¼­£º´ò¸ö±È·½£¬¹â±ê³õÊ¼ÔÚµÚÒ»ÐÐ£¬ÒªÈÃËüÍùÏÂÒÆÒ»¸ñ£¬¾ÍÒªÏÈÏû³ýµÚÒ»ÐÐµÄ¹â±êÔÙÏÔÊ¾µÚ¶þÐÐµÄ¹â±ê£
+             -¬¹ÊÏÔÊ¾Âß¼­ÎªÏÈÓÃlayer_last[1]¸³Öµlayer[1]£¬È»ºóÍ¨¹ý"up"»ò"down"
+  170          //¿ØÖÆlayer[1]¼Ó¼õ£¬Ö®ºóÔÙÔÚlayer_last[1]ÐÐÏÔÊ¾" "Ïû³ý¹â±ê£¬ÔÚlayer[1]ÐÐÏÔÊ¾">"ÏÔÊ¾¹â±ê£¬ÒÔ´Ë¿ØÖÆ¹â±êÉÏÏÂ
+             -ÒÆ£¬ÈçÏÂ£¨246ÐÐ£©£º
+  171          
+  172          // case up:
+  173          //         layer_last[1]=layer[1];//layer_lastÓÃÓÚÇå³ý">"
+  174          //         layer[1]--;    
+  175          
+  176          
+  177          
+  178          
+  179          
+  180          //ÏÈ½«ÉÏÃæµÄÒ»¶þÈý¼¶²Ëµ¥Êý×é·Ö±ð¼ò³ÆÎª_M[],_2M[][],_3M[][]
+  181          //µ±key_downµÄÖµÎªmid_bÊ±ÔõÃ´¿ØÖÆ½ø³ö²Ëµ¥£ºÏÈ´ò¸ö±È·½£¬²Ëµ¥³õÊ¼Ê±´ÓÉÏµ½ÏÂÏÔÊ¾{"Img","Speed","PID","Nstart
+             -","Otsu","Start"}Õâ¼¸¸öµ¥´Ê£¬¹â±êÏÔÊ¾ÔÚ"Img"ÕâÐÐ£¬°Ñ¹â±êÒÆµ½"PID"
+C251 COMPILER V5.60.0,  menu                                                               30/12/24  14:01:20  PAGE 4   
+
+  182          //ÕâÐÐ£¬¾ÍÊÇµÚÈýÐÐÈ»ºó°´ÏÂ°´¼ü½«key_downÖÃmid_b£¬ÏÔÊ¾ÆÁ¾Í»áÏÔÊ¾µÚ¶þ¼¶²Ëµ¥µÚÈýÏî{ "G_PID", "W_PID","T_PID"
+             -, "S_PID","Servo_P","return"}ÕâÀï£¬È»ºó¹â±êÒÆÖÁ"return"ÕâÀï£¬ÔÙ
+  183          //°´Ò»ÏÂ¾Í»á»Øµ½µÚÒ»¼¶²Ëµ¥¡£Ê×ÏÈ¹â±êÒÆµ½µÚÈýÐÐÊ±layer[0l==1,ayer[1]==3£¬°´Ò»ÏÂ°´¼ülayer[0]++,¼´¼¶Êý¼ÓÒ»£¬
+             -È»ºó¸ü¸ÄÏÔÊ¾ÄÚÈÝÊÇshow_menuµÄÈÎÎñ£¬show_menuÖÐÏÈ¶¨ÒåÒ»¸önest_layer
+  184          //½«Æä¸³Öµlayer[1],Ò²¾ÍÊÇ3£¬È»ºóÇå³ýºóÓÃÑ­»·ÏÔÊ¾_2M[nest_layer][i]¾ÍÊµÏÖÁË£¬ÈçÏÂ£¨298ÐÐ£©£º
+  185          
+  186          // if(choice>last_choice) {  lcd_clear(WHITE); last_choice = choice; nest_layer = layer[1]; layer[1] = 0;
+             -}
+  187          // if(choice<last_choice) {  lcd_clear(WHITE); last_choice = choice; nest_layer = last_layer; layer[1] = 
+             -0;}//ÕâÀïchoiceÔÚµ÷ÓÃÊ±±»¸³Öµlayer[0],last_layerÎªÎÞÐ§±äÁ¿
+  188          
+  189          //  switch(choice)
+  190          //     {
+  191          //         case 1: /*Ö÷²Ëµ¥*/
+  192          
+  193          //            /*ÏÔÊ¾,²¢Çå³ý>*/
+  194          //            lcd_showstr(0,first_y+layer_last[1]*10," ");  //Çå³ýÖ®Ç°ÐÐµÄ">"
+  195          //            lcd_showstr(0,first_y+layer[1]*10, ">");  //ÏÔÊ¾µ±Ç°ÐÐ">"
+  196          //            nest_layer=0;
+  197          //            for(i=0;i<10;i++)
+  198          //            {
+  199          //              if(MainMenu_lable[i]==NULL) break;
+  200          //              lcd_showstr(first_x,first_y+i*10,   MainMenu_lable[i]);//ÏÔÊ¾¸÷Ïî²ÎÊýÃû
+  201          //              return_labelx=99;
+  202          //              return_labely=i;//Ñ­»·½áÊøiµÄÖµ¼´Îª×îºóÒ»Ïî£¬ÓÃÓÚreturnµÄ·µ»ØÂß¼­
+  203          //            }
+  204          
+  205          
+  206          
+  207          
+  208          
+  209          //adjust£¨int type£©¾ÍºÜºÃÀí½âÁË£¬Í¨¹ýÉÏÃæµÄÀý×Ó¾Í¿ÉÒÔÀí½âlayer[0]±íÊ¾µÚ¼¸¼¶²Ëµ¥£¬nest_layer±íÊ¾ÉÏÒ»´Î¹â±
+             -êÔÚµÚ¼¸ÐÐ£¬Í¨¹ýÕâÁ½¸ö¾Í¿ÉÒÔÈ·¶¨ÄãÏÔÊ¾ÄÄ¸öÊý×éÀï£¬È»ºólayer[0]±íÊ¾Äã
+  210          // µ±Ç°¼¶¹â±êÏÔÊ¾ÔÚÄÄ£¬Í¨¹ýÕâÈý¸öÖµ¾Í¿ÉÒÔÈ·¶¨ÐÞ¸ÄÄÄ¸ö²ÎÊýÁË
+  211          
+  212          
+  213          
+  214          
+  215          //×îºóËµÒ»ÏÂint return_labelx=99,return_labely=99;ÕâÁ½¸ö±äÁ¿£¬ÕâÁ½¸ö±äÁ¿¾ÍÖ»ÓÐ99,2,3ÕâÈý¸öÖµ£¬99´ú±íµÚÒ»¼
+             -¶²Ëµ¥Ê±£¬ËüÃÇÓÃÀ´ÊµÏÖµ±¹â±ê´¦ÔÚreturnÕâÐÐÊ±ÄÜÊµÏÖÍË»Øµ½ÉÏÒ»¼¶
+  216          // ²Ëµ¥µÄ²Ù×÷£¬ÈçÏÂ´úÂë£¨267ÐÐ£©£º
+  217          //case mid_b:
+  218          //            if(return_labelx == layer[0] && return_labely == layer[1]) {
+  219                           // ÓÃ»§Ñ¡ÔñÁË·µ»Ø²Ù×÷£¬½µµÍÒ»¸ö²Ëµ¥²ã¼¶
+  220          //                 layer[0]--;
+  221          //                 if(layer[0] < 1) {
+  222          //                     layer[0] = 1; // È·±£²»»áµÍÓÚÖ÷²Ëµ¥²ã¼¶
+  223          //                }
+  224          //ÕâÂß¼­ÊÇµ±return_labelxÎªµ±Ç°¼¶ÊýÇÒreturn_labelyÎªµ±Ç°¹â±êÐÐÊýÊ±°´ÏÂÈ¥ÍË»ØÉÏÒ»¼¶£¬return_labelx¸³Öµ¾ÍÐÐ
+             -ÁË£¬Ö÷ÒªÊÇÈçºÎÈ·¶¨return_labelyÒ»¶¨Îª×îºóÒ»ÐÐ(ÉÏÃæÊý×é¶¨ÒåÀï
+  225          // ¡°return¡±¶¼ÊÇ×îºóÒ»¸ö)£¬´úÂëÈçÏÂ£¨324ÐÐ£©£º
+  226          
+  227          // for(i=0;i<10;i++)
+  228          //              {
+  229          //                  if(_2Menu_lable[nest_layer][i]==NULL) break;
+  230          //                  lcd_showstr(first_x,80+i*10,   _2Menu_lable[nest_layer][i]);//ÏÔÊ¾Êý×éÄÚµÄÃû³Æ
+  231          //                  return_labelx=2;
+  232          //                  return_labely=i;//Ñ­»·½áÊøiµÄÖµ¼´Îª×îºóÒ»Ïî£¬ÓÃÓÚreturnµÄ·µ»ØÂß¼­
+  233          //              }
+  234          
+  235          
+  236          
+  237          
+  238          void adjust_process(int type);
+  239          int last_choice=1;
+  240          int nest_layer,last_layer;//nest_layer´¢´æÉÏÒ»¼¶µÄÏîÊý£¬lastÎªÏÂÒ»¼¶(Ä¿Ç°ÎªÎÞÐ§²ÎÊý)
+C251 COMPILER V5.60.0,  menu                                                               30/12/24  14:01:20  PAGE 5   
+
+  241          int return_labelx=99,return_labely=99;
+  242          
+  243          
+  244          void key_process(void)//°´¼ü¸ü¸Älayer[0],layer[1],Í¨¹ýadjustº¯ÊýÐÞ¸Ä²ÎÊý
+  245          {
+  246   1          key_val=key_scan(1);
+  247   1          key_down=key_val&(key_val^key_last);  //Ïû¶¶
+  248   1          key_last=key_val;
+  249   1          switch(key_down)
+  250   1        {
+  251   2            case up:
+  252   2                layer_last[1]=layer[1];//layer_lastÓÃÓÚÇå³ý">"
+  253   2                layer[1]--;    
+  254   2                if(layer[1]<0) layer[1] = return_labely;//ÏÞ·ùºÍÇåÁã
+  255   2                break;
+  256   2      
+  257   2            case down:
+  258   2      
+  259   2                layer_last[1]=layer[1];//layer_lastÓÃÓÚÇå³ý">"
+  260   2                layer[1]++;
+  261   2                if(layer[1]>return_labely) layer[1] = 0;
+  262   2                break;
+  263   2          /*×ó¼õÓÒ¼Ó*/
+  264   2            case right:
+  265   2                adjust_process(1);
+  266   2                    break;
+  267   2      
+  268   2            case left:
+  269   2                adjust_process(0);
+  270   2                    break;
+  271   2      
+  272   2              case mid_b:
+  273   2                  if(return_labelx == layer[0] && return_labely == layer[1]) {
+  274   3                      // ÓÃ»§Ñ¡ÔñÁË·µ»Ø²Ù×÷£¬½µµÍÒ»¸ö²Ëµ¥²ã¼¶
+  275   3                      layer[0]--;
+  276   3                      if(layer[0] < 1) {
+  277   4                          layer[0] = 1; // È·±£²»»áµÍÓÚÖ÷²Ëµ¥²ã¼¶
+  278   4                      }
+  279   3                  } else {
+  280   3                      // ÓÃ»§Ñ¡Ôñ½øÈëÏÂÒ»²ã¼¶»òÔÚÍ¬Ò»²ã¼¶ÄÚÒÆ¶¯
+  281   3                      layer_last[0] = layer[0]; // ¼ÇÂ¼ÉÏÒ»¸ö²ã¼¶£¬¿ÉÄÜÎ´À´ÓÐÓÃ
+  282   3      
+  283   3                      if(layer[0] < 3) {
+  284   4                          layer[0]++; // ½öµ±²»ÔÚ×îÉî²ã¼¶Ê±£¬²ÅÔÊÐí½øÈë¸üÉî²ã¼¶
+  285   4                      }
+  286   3      
+  287   3                      last_layer = nest_layer; 
+  288   3                  }
+  289   2      
+  290   2                     break;
+  291   2      
+  292   2              default: break;
+  293   2      
+  294   2          }
+  295   1      }
+  296          
+  297          //nest_layerÓÃÓÚÑ¡Ôñ¶þ¼¶²Ëµ¥¸Ã½øÈëÊ²Ã´½çÃæ
+  298          //
+  299          
+  300          void show_meun(int choice,int meun_num)//choice¸³ÖµÎªlayer[0]
+  301          {
+  302   1          int i=0;
+  303   1          /*¸üÐÂ½çÃæ*/
+  304   1          if(choice>last_choice) {  lcd_clear(WHITE); last_choice = choice; nest_layer = layer[1]; layer[1] = 0
+             -;}//choiceÎª²Ëµ¥¼¶,nest_layer¸³ÖµÎªlayer[1],¼´ÉÏÒ»¼¶²Ëµ¥µÄµÚxÏî
+  305   1          if(choice<last_choice) {  lcd_clear(WHITE); last_choice = choice; nest_layer = last_layer; layer[1] =
+C251 COMPILER V5.60.0,  menu                                                               30/12/24  14:01:20  PAGE 6   
+
+             - 0;}//nest_layerÎªÉÏÒ»¼¶ÏîÊý£¬layer[0]Îªµ±Ç°¼¶ÏîÊý£¬µÝ½øÊ±ÇåÁã
+  306   1          switch(choice)
+  307   1          {
+  308   2              case 1: /*Ö÷²Ëµ¥*/
+  309   2      
+  310   2                 /*ÏÔÊ¾,²¢Çå³ý>*/
+  311   2                 lcd_showstr(0,first_y+layer_last[1]*10," ");  //Çå³ýÖ®Ç°ÐÐµÄ">"
+  312   2                 lcd_showstr(0,first_y+layer[1]*10, ">");  //ÏÔÊ¾µ±Ç°ÐÐ">"
+  313   2                 nest_layer=0;
+  314   2                 for(i=0;i<10;i++)
+  315   2                 {
+  316   3                   if(MainMenu_lable[i]==NULL) break;
+  317   3                   lcd_showstr(first_x,first_y+i*10,   MainMenu_lable[i]);//ÏÔÊ¾¸÷Ïî²ÎÊýÃû
+  318   3                   return_labelx=99;
+  319   3                   return_labely=i;//Ñ­»·½áÊøiµÄÖµ¼´Îª×îºóÒ»Ïî£¬ÓÃÓÚreturnµÄ·µ»ØÂß¼­
+  320   3                 }
+  321   2      
+  322   2              break;
+  323   2              case 2: /*2¼¶²Ëµ¥*/
+  324   2              {
+  325   3               /*ÏÔÊ¾,²¢Çå³ý>*/
+  326   3               if(layer[0]==2&&nest_layer==5)//µÚÒ»¸öÊý×éÀïµÄ¡°Start¡±
+  327   3               {
+  328   4                   lcd_showstr(0,80+layer_last[1]*10," ");  //Çå³ýÖ®Ç°ÐÐµÄ">"
+  329   4                   lcd_showstr(0,80+layer[1]*10, ">");  //ÏÔÊ¾µ±Ç°ÐÐ">"
+  330   4                   for(i=0;i<10;i++)
+  331   4                   {
+  332   5                       if(_2Menu_lable[nest_layer][i]==NULL) break;
+  333   5                       lcd_showstr(first_x,80+i*10,   _2Menu_lable[nest_layer][i]);//ÏÔÊ¾Êý×éÄÚµÄÃû³Æ
+  334   5                       return_labelx=2;
+  335   5                       return_labely=i;//Ñ­»·½áÊøiµÄÖµ¼´Îª×îºóÒ»Ïî£¬ÓÃÓÚreturnµÄ·µ»ØÂß¼­
+  336   5      
+  337   5                   }
+  338   4               }
+  339   3               else
+  340   3               {
+  341   4                   lcd_showstr(0,first_y+layer_last[1]*10," ");  //Çå³ýÖ®Ç°ÐÐµÄ">"
+  342   4                   lcd_showstr(0,first_y+layer[1]*10, ">");  //ÏÔÊ¾µ±Ç°ÐÐ">"
+  343   4                   for(i=0;i<10;i++)
+  344   4                  {
+  345   5                      if(_2Menu_lable[nest_layer][i]==NULL) break;
+  346   5                      lcd_showstr(first_x,first_y+i*10,   _2Menu_lable[nest_layer][i]);//ÏÔÊ¾Êý×éÄÚµÄÃû³Æ
+  347   5                      return_labelx=2;
+  348   5                      return_labely=i;//Ñ­»·½áÊøiµÄÖµ¼´Îª×îºóÒ»Ïî£¬ÓÃÓÚreturnµÄ·µ»ØÂß¼­
+  349   5      
+  350   5                  }
+  351   4               }
+  352   3              }
+  353   2              break;
+  354   2              case 3: /*3¼¶²Ëµ¥*/
+  355   2              {
+  356   3                  /*ÏÔÊ¾,²¢Çå³ý>*/
+  357   3                  lcd_showstr(0,first_y+layer_last[1]*10," ");  //Çå³ýÖ®Ç°ÐÐµÄ">"
+  358   3                  lcd_showstr(0,first_y+layer[1]*10, ">");  //ÏÔÊ¾µ±Ç°ÐÐ">"
+  359   3                  for(i=0;i<10;i++)
+  360   3                  {
+  361   4                    if(_3Menu_lable[nest_layer][i]==NULL) break;
+  362   4                    lcd_showstr(first_x,first_y+i*10,   _3Menu_lable[nest_layer][i]);//ÏÔÊ¾Êý×éÄÚµÄÃû³Æ
+  363   4                    return_labelx=3;
+  364   4                    return_labely=i;//Ñ­»·½áÊøiµÄÖµ¼´Îª×îºóÒ»Ïî£¬ÓÃÓÚreturnµÄ·µ»ØÂß¼­
+  365   4                  }
+  366   3              }
+  367   2              break;
+  368   2      
+  369   2          }
+  370   1      
+C251 COMPILER V5.60.0,  menu                                                               30/12/24  14:01:20  PAGE 7   
+
+  371   1      }
+*** WARNING C47 IN LINE 300 OF menu.c: 'meun_num': unreferenced parameter
+  372          
+  373          int p_x=60;
+  374          int no_barrier;
+  375          int center_enter;
+  376          
+  377          
+  378          
+  379          void show_data(void)
+  380          {
+  381   1          if(layer[0]==1)
+  382   1              lcd_showint16(first_x+p_x,first_y+10, start_speed );//speed_val[speed_chose]
+  383   1          else if(layer[0]==2)
+  384   1          {
+  385   2              switch(nest_layer)
+  386   2              {
+  387   3                  case 0:/*Í¼Ïñ*/
+  388   3                      lcd_showint16(first_x+p_x+20,first_y,image_flag );
+  389   3                      lcd_showint16(first_x+p_x+20,first_y+10,wifi_flag );
+  390   3                      lcd_showint16(first_x+p_x+20,first_y+20,front_dot_s );
+  391   3                      lcd_showfloat(first_x+p_x+10,first_y+30,k_lost ,3,3);
+  392   3                      lcd_showint16(first_x+p_x+20,first_y+40,speed_chose);
+  393   3      
+  394   3                      break;
+  395   3      
+  396   3      
+  397   3      //            case 3: /*¶æ»ú*/
+  398   3      //                lcd_showfloat(first_x+p_x+20,first_y,  Servo_PID.kp,3,2);
+  399   3      //                break;
+  400   3      
+  401   3                  case 5: /*´ó½ò·¨*/
+  402   3      //                tft180_show_gray_image(0, 0, img_filter[0], MT9V03X_W, MT9V03X_H, MT9V03X_W / 2, MT9V03
+             -X_H, 0);
+  403   3      //                lcd_showint16(first_x+p_x,80,      lower_thres ,3);
+  404   3      //                lcd_showint16(first_x+p_x,80+10,      higth_thres ,3);
+  405   3                      lcd_clear(WHITE);
+  406   3                      firing_flag = 1;
+  407   3                      break;
+  408   3              }
+  409   2          }
+  410   1          else
+  411   1          {
+  412   2              switch(nest_layer)
+  413   2               {
+  414   3                  case 0:/*½ÇËÙ¶È*/
+  415   3                      lcd_showfloat(first_x+p_x,first_y, Gyroy_PID.kp,3,2);
+  416   3                      lcd_showfloat(first_x+p_x,first_y+10, Gyroy_PID.ki,3,2);
+  417   3                      break;
+  418   3      
+  419   3                  case 1:/*½Ç¶È*/
+  420   3                      lcd_showfloat(first_x+p_x,first_y,WPitch_PID.kp,3,2);
+  421   3                      lcd_showfloat(first_x+p_x,first_y+10,WPitch_PID.kd,3,2);
+  422   3      //                lcd_showint16(first_x+p_x,first_y+20,big_circle,3);
+  423   3                      break;
+  424   3      
+  425   3                  case 2:/*×ªÏò»·*/
+  426   3                      lcd_showfloat(first_x+p_x,first_y,     k_e1,3,2);
+  427   3                      lcd_showfloat(first_x+p_x,first_y+10,  k_e2,3,2);
+  428   3                      lcd_showfloat(first_x+p_x,first_y+20,  k_e3,3,2);
+  429   3                      lcd_showfloat(first_x+p_x,first_y+30,  k_e4,3,2);
+  430   3                      lcd_showfloat(first_x+p_x,first_y+40,  k_e5,3,2);
+  431   3                      lcd_showfloat(first_x+p_x,first_y+50,  YGyrox_PID.kp,3,2);
+  432   3                      lcd_showfloat(first_x+p_x,first_y+60,  Turn_PID.kp,3,3);
+  433   3                      break;
+  434   3      
+C251 COMPILER V5.60.0,  menu                                                               30/12/24  14:01:20  PAGE 8   
+
+  435   3                  case 3:/*ÇúÏß¼õËÙ*/
+  436   3                      lcd_showfloat(first_x+p_x,first_y, Speed_PID.kp,3,2);
+  437   3                      lcd_showfloat(first_x+p_x,first_y+10,  Speed_PID.kd,3,2);
+  438   3                      break;
+  439   3      
+  440   3                  case 4:/*¶æ»ú*/
+  441   3                      lcd_showfloat(first_x+p_x,first_y,  Servo_PID.kp,3,2);//Servo_PID.kp
+  442   3                      break;
+  443   3      //            case 5:/*¼ÓËÙ¶È*/
+  444   3      //                lcd_showint16(first_x+p_x,first_y,  front_dot_s,3);
+  445   3      //                lcd_showfloat(first_x+p_x,first_y+10,  Target_Comspeed_max,4,1);
+  446   3      //                break;
+  447   3               }
+  448   2          }
+  449   1      
+  450   1      }
+  451          
+  452          uint32 *ptemp=0;
+  453          void adjust_process(int type)
+  454          {
+  455   1          if(type)
+  456   1          {
+  457   2              if(layer[0]==1&&layer[1]==1)
+  458   2              {
+  459   3                  start_speed+=100;
+  460   3              }
+  461   2      
+  462   2              else if(layer[0]==2)
+  463   2              {
+  464   3                  switch(nest_layer)
+  465   3                  {
+  466   4                      case 0:/*Í¼Ïñ¿ª¹Ø*/
+  467   4                          if(layer[1]==0)    image_flag+=1;
+  468   4                          if(layer[1]==1)    wifi_flag+=1;   
+  469   4                      
+  470   4                          if(layer[1]==2)    front_dot_s+=1;
+  471   4                          if(layer[1]==3)    k_lost=0.001;
+  472   4                          if(layer[1]==4)    //Speed_Chose(1);
+  473   4                          image_flag%=2;
+  474   4                          wifi_flag%=2;
+  475   4                          break;
+  476   4      
+  477   4                  }
+  478   3              }
+  479   2              else if(layer[0]==3)
+  480   2              {
+  481   3                  switch(nest_layer)
+  482   3                  {
+  483   4                      case 0:/*½ÇËÙ¶È*/
+  484   4                          if(layer[1]==0)          Gyroy_PID.kp+=0.02;
+  485   4                          else if(layer[1]==1)     Gyroy_PID.ki+=0.01;
+  486   4                          break;
+  487   4      
+  488   4                      case 1:/*½Ç¶È»·*/
+  489   4                          if(layer[1]==0)          WPitch_PID.kp+=0.01;
+  490   4                          else if(layer[1]==1)     WPitch_PID.kd+=0.01;
+  491   4                          break;
+  492   4      
+  493   4                      case 2:/*×ªÏò»·*/
+  494   4                          if(layer[1]==0)          k_e1+=0.01;
+  495   4                          else if(layer[1]==1)     k_e2+=0.01;
+  496   4                          else if(layer[1]==2)     k_e3+=0.01;
+  497   4                          else if(layer[1]==3)     k_e4+=0.01;
+  498   4                          else if(layer[1]==4)     k_e5+=0.01;
+  499   4                          else if(layer[1]==5)     YGyrox_PID.kp+=0.01;
+  500   4                          else if(layer[1]==6)     Turn_PID.kp+=0.001;
+C251 COMPILER V5.60.0,  menu                                                               30/12/24  14:01:20  PAGE 9   
+
+  501   4                          break;
+  502   4      
+  503   4                      case 3:/*¼õËÙ²ÎÊý*/
+  504   4                          if(layer[1]==0)          Speed_PID.kp+=0.01;
+  505   4                          else if(layer[1]==1)     Speed_PID.kd+=0.01;
+  506   4                          break;
+  507   4      
+  508   4                      case 4:/*¶æ»ú*/
+  509   4                          if(layer[1]==0)          Servo_PID.kp+=0.01;
+  510   4      
+  511   4                          break;
+  512   4          //            case 5:/*¼ÓËÙ¶È  */
+  513   4          //                if(layer[1]==0)          ;
+  514   4          //                else if(layer[1]==1)     Target_Comspeed_max+=50;
+  515   4          //                break;
+  516   4                  }
+  517   3              }   
+  518   2          }
+  519   1      /****************************------------  ×Ô¼õ  -------------*********************************/
+  520   1          else
+  521   1          {
+  522   2              if(layer[0]==1&&layer[1]==1)
+  523   2              {
+  524   3                  start_speed-=100;
+  525   3                  if(speed_chose<0) speed_chose=0;
+  526   3              }
+  527   2      //        else if(layer[0]==1&&layer[1]==6)
+  528   2      //        {
+  529   2      //
+  530   2      //        }
+  531   2              else if(layer[0]==2)
+  532   2              {
+  533   3                  switch(nest_layer)
+  534   3                  {
+  535   4                      case 0:
+  536   4                          if(layer[1]==0)    image_flag-=1;
+  537   4                          if(layer[1]==1)    wifi_flag-=1;
+  538   4                          if(layer[1]==2)    front_dot_s-=1;
+  539   4                          if(layer[1]==3)    k_lost-=0.001;
+  540   4                          if(layer[1]==4)    //Speed_Chose(-1);
+  541   4                          image_flag%=2;
+  542   4                          wifi_flag%=2;
+  543   4                          break;
+  544   4      
+  545   4                  }
+  546   3              }
+  547   2              else if(layer[0]==3)
+  548   2              {
+  549   3                  switch(nest_layer)
+  550   3                   {
+  551   4                      case 0:/*½ÇËÙ¶È*/
+  552   4                          if(layer[1]==0)          Gyroy_PID.kp-=0.02;
+  553   4                          else if(layer[1]==1)     Gyroy_PID.ki-=0.01;
+  554   4                          break;
+  555   4      
+  556   4                      case 1:/*½Ç¶È*/
+  557   4                          if(layer[1]==0)          WPitch_PID.kp-=0.01;
+  558   4                          else if(layer[1]==1)     WPitch_PID.kd-=0.01;
+  559   4                          break;
+  560   4      
+  561   4                      case 2:/*×ªÏò*/
+  562   4                          if(layer[1]==0)          k_e1-=0.01;
+  563   4                          else if(layer[1]==1)     k_e2-=0.01;
+  564   4                          else if(layer[1]==2)     k_e3-=0.01;
+  565   4                          else if(layer[1]==3)     k_e4-=0.01;
+  566   4                          else if(layer[1]==4)     k_e5-=0.01;
+C251 COMPILER V5.60.0,  menu                                                               30/12/24  14:01:20  PAGE 10  
+
+  567   4                          else if(layer[1]==5)     YGyrox_PID.kp-=0.01;
+  568   4                          else if(layer[1]==6)     Turn_PID.kp-=0.001;
+  569   4                          break;
+  570   4      
+  571   4                      case 3:/*ÇúÏß¼õËÙ*/
+  572   4                          if(layer[1]==0)          Speed_PID.kp-=0.01;
+  573   4                          else if(layer[1]==1)     Speed_PID.kd-=0.01;
+  574   4                          break;
+  575   4      
+  576   4                      case 4:/*¶æ»ú*/
+  577   4                          if(layer[1]==0)          Servo_PID.kp-=0.01;
+  578   4                          break;
+  579   4      
+  580   4      //                case 5:/*¼ÓËÙ¶È*/
+  581   4      //                    if(layer[1]==0)          front_dot_s-=1;
+  582   4      //                    else if(layer[1]==1)     Target_Comspeed_max-=50;
+  583   4      //                    break;
+  584   4                   }
+  585   3              }
+  586   2          }
+  587   1      
+  588   1          /*ºóÃæ¸ÄÎª1sË¢ÐÂÒ»´Î*/
+  589   1              write_flash();//°´ÁË¼Ó¼õ²ÅÄÜÐ´Èë
+  590   1      //        if(speed_mode==1)
+  591   1      //        {
+  592   1      //            if(flash_check(FLASH_SECTION_INDEX, SPEED_SMOOTH))
+  593   1      //               flash_erase_page(FLASH_SECTION_INDEX, SPEED_SMOOTH);
+  594   1      //            flash_write_page_from_buffer(FLASH_SECTION_INDEX, SPEED_SMOOTH);
+  595   1      //        }
+  596   1      //        else if(speed_mode==2)
+  597   1      //        {
+  598   1      //            if(flash_check(FLASH_SECTION_INDEX, SPEED_FAST))
+  599   1      //               flash_erase_page(FLASH_SECTION_INDEX, SPEED_FAST);
+  600   1      //            flash_write_page_from_buffer(FLASH_SECTION_INDEX, SPEED_FAST);
+  601   1      //        }
+  602   1      //        else if(speed_mode==3)
+  603   1      //        {
+  604   1      //            if(flash_check(FLASH_SECTION_INDEX, SPEED_DARTING))
+  605   1      //               flash_erase_page(FLASH_SECTION_INDEX, SPEED_DARTING);
+  606   1      //            flash_write_page_from_buffer(FLASH_SECTION_INDEX, SPEED_DARTING);
+  607   1      //        }
+  608   1      //        else if(speed_mode==4)
+  609   1      //        {
+  610   1      //            if(flash_check(FLASH_SECTION_INDEX, SPEED_DRAG_RACING))
+  611   1      //               flash_erase_page(FLASH_SECTION_INDEX, SPEED_DRAG_RACING);
+  612   1      //            flash_write_page_from_buffer(FLASH_SECTION_INDEX, SPEED_DRAG_RACING);
+  613   1      //        }
+  614   1      }
+  615          
+  616          
+  617          
+  618          
+  619          
+  620          
+  621          
+  622          
+  623          
+  624          
+  625          
+  626          
+  627          
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =      4447     ------
+  ecode size           =    ------     ------
+C251 COMPILER V5.60.0,  menu                                                               30/12/24  14:01:20  PAGE 11  
+
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =      1528     ------
+  xdata-const size     =    ------     ------
+  edata size           =    ------     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =      1891     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

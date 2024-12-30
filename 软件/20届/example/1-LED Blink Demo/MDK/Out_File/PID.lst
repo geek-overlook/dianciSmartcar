@@ -1,0 +1,211 @@
+C251 COMPILER V5.60.0,  PID                                                                30/12/24  14:01:21  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE PID
+OBJECT MODULE PLACED IN .\Out_File\PID.obj
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE PID.c LARGE WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCDIR(..\..\Libr
+                    -aries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc;..\USER\src;.
+                    -.\..\Libraries\seekfree_components;..\USER\inc;..\USER\src;..\MDK) DEBUG PRINT(.\Out_File\PID.lst) TABS(2) OBJECT(.\Out_
+                    -File\PID.obj) 
+
+stmt  level    source
+
+    1          #include "headfile.h"
+    2          #include "control.h"
+    3          #include "PID.h"
+    4          
+    5          
+    6          
+    7          _PID Gyroy_PID,WPitch_PID,Speed_PID,Servo_PID,Go_Speed_PID;
+    8          _PID YGyrox_PID,Yaw_angle_PID,YSpeed_PID;
+    9          _PID TGyroz_PID,Turn_PID,TSpeed_PID;
+   10          _PID mr_pid,ml_pid;//左右电机pid
+   11          _PID R_pid,L_pid;
+   12          
+   13          void PID_init(_PID* sptr)
+   14          {
+   15   1          sptr->kp = 0.0;              // 比例常数
+   16   1          sptr->ki = 0.0;              // 积分常数
+   17   1          sptr->kd = 0.0;              // 微分常数
+   18   1          sptr->kp1 = 0.0;             // 附加比例常数 1（如果使用）
+   19   1          sptr->kp2 = 0.0;             // 附加比例常数 2（如果使用）
+   20   1      
+   21   1          sptr->limit_max = 0;         // 输出最大值限制
+   22   1          sptr->limit_min = 0;         // 输出最小值限制
+   23   1      
+   24   1          sptr->integral_max = 0.0;   // 积分部分的最大值
+   25   1          sptr->integral_min = 0.0;   // 积分部分的最小值
+   26   1      
+   27   1          sptr->err = 0.0;             // 当前误差
+   28   1          sptr->err_sum = 0.0;         // 误差总和（积分部分）
+   29   1          sptr->err_last = 0.0;        // 上次误差（用于微分计算）
+   30   1          sptr->d_err = 0.0;           // 微分误差（误差变化量）
+   31   1      
+   32   1          sptr->out = 0.0;             // PID 控制器的输出值
+   33   1          sptr->integral_out = 0.0;    // 积分部分的输出
+   34   1          sptr->kp_out = 0.0;          // 比例部分的输出
+   35   1          sptr->kd_out = 0.0;          // 微分部分的输出
+   36   1          sptr->kd_lastout = 0.0;      // 上次微分部分的输出
+   37   1      
+   38   1          sptr->Target = 0.0;          // 目标值（期望值）
+   39   1          sptr->now = 0.0;             // 当前过程变量（测量值）
+   40   1      
+   41   1          sptr->filter = 0.0;          // 噪声滤波值（如果需要的话）
+   42   1      }
+   43          
+   44          // PID设置函数
+   45          void PID_Set(_PID *PID, float kp, float Ki, float Kd, 
+   46                       float kp1, float kp2, int Limit_Max, int Limit_Min,
+   47                       float Integral_Max, float Integral_Min, 
+   48                       float Target, float Now)
+   49          {
+   50   1          // 设置PID参数
+   51   1          PID->kp = kp;
+   52   1          PID->ki = Ki;
+   53   1          PID->kd = Kd;
+   54   1          
+   55   1          // 设置附加的比例常数
+   56   1          PID->kp1 = kp1;
+C251 COMPILER V5.60.0,  PID                                                                30/12/24  14:01:21  PAGE 2   
+
+   57   1          PID->kp2 = kp2;
+   58   1          
+   59   1          // 设置限制值
+   60   1          PID->limit_max = Limit_Max;
+   61   1          PID->limit_min = Limit_Min;
+   62   1          
+   63   1          // 设置积分最大值和最小值
+   64   1          PID->integral_max = Integral_Max;
+   65   1          PID->integral_min = Integral_Min;
+   66   1          
+   67   1          // 初始化误差相关值
+   68   1          PID->err = 0.0;
+   69   1          PID->err_sum = 0.0;
+   70   1          PID->err_last = 0.0;
+   71   1          PID->d_err = 0.0;
+   72   1          
+   73   1          // 设置输出值
+   74   1          PID->out = 0.0;
+   75   1          PID->integral_out = 0.0;
+   76   1          PID->kp_out = 0.0;
+   77   1          PID->kd_out = 0.0;
+   78   1          PID->kd_lastout = 0.0;
+   79   1          
+   80   1          // 设置目标值和当前值
+   81   1          PID->Target = Target;
+   82   1          PID->now = Now;
+   83   1          
+   84   1          // 初始化滤波器值
+   85   1          PID->filter = 0.0;
+   86   1      }
+   87          
+   88          // 速度环(增量式PID)
+   89          float IncPID(float Encoder, float Target, _PID* sptr) 
+   90          {
+   91   1          float Pwm;
+   92   1          
+   93   1          // 计算当前误差
+   94   1          sptr->err = Target - Encoder;  // 当前误差 = 目标值 - 当前测量值
+   95   1      
+   96   1          // 比例项 (P)
+   97   1          sptr->kp_out = sptr->kp * sptr->err;  // 比例项 = kp * 当前误差
+   98   1          
+   99   1          // 积分项 (I)
+  100   1          sptr->err_sum += sptr->err;  // 累加当前误差，作为积分项
+  101   1          if (sptr->err_sum > sptr->integral_max) {
+  102   2              sptr->err_sum = sptr->integral_max;  // 限制积分最大值
+  103   2          } else if (sptr->err_sum < sptr->integral_min) {
+  104   2              sptr->err_sum = sptr->integral_min;  // 限制积分最小值
+  105   2          }
+  106   1          sptr->integral_out = sptr->ki * sptr->err_sum;  // 积分项 = Ki * 积分误差
+  107   1      
+  108   1          // 微分项 (D)
+  109   1          sptr->d_err = sptr->err - sptr->err_last;  // 计算误差变化量
+  110   1          sptr->kd_out = sptr->kd * sptr->d_err;  // 微分项 = Kd * 误差变化量
+  111   1      
+  112   1          // PID 控制输出 = 比例项 + 积分项 + 微分项
+  113   1          Pwm = sptr->kp_out + sptr->integral_out + sptr->kd_out;
+  114   1          
+  115   1          // 输出限制
+  116   1          if (Pwm > sptr->limit_max) {
+  117   2              Pwm = sptr->limit_max;  // 限制最大输出值
+  118   2          } else if (Pwm < sptr->limit_min) {
+  119   2              Pwm = sptr->limit_min;  // 限制最小输出值
+  120   2          }
+  121   1      
+  122   1          // 更新历史误差
+C251 COMPILER V5.60.0,  PID                                                                30/12/24  14:01:21  PAGE 3   
+
+  123   1          sptr->err_last = sptr->err;  // 存储当前误差，作为下次计算的“上次误差”
+  124   1      
+  125   1          return Pwm;  // 返回PID输出
+  126   1      }
+  127          
+  128          // 位置式PID
+  129          float PstPID(float Angle, float Target, _PID* sptr)
+  130          {
+  131   1          float Pwm;
+  132   1      
+  133   1          // 计算当前误差
+  134   1          sptr->err = Target - Angle;  // 当前误差 = 目标值 - 当前角度（或当前位置）
+  135   1      
+  136   1          // 计算比例部分
+  137   1          sptr->kp_out = sptr->kp * sptr->err;  // 比例项输出 = kp * 当前误差
+  138   1      
+  139   1          // 计算积分部分
+  140   1          sptr->err_sum += sptr->err;  // 积分项 = 误差累计
+  141   1          if (sptr->err_sum > sptr->integral_max) {
+  142   2              sptr->err_sum = sptr->integral_max;  // 积分部分的最大限制
+  143   2          } else if (sptr->err_sum < sptr->integral_min) {
+  144   2              sptr->err_sum = sptr->integral_min;  // 积分部分的最小限制
+  145   2          }
+  146   1          sptr->integral_out = sptr->ki * sptr->err_sum;  // 积分项输出 = Ki * 累积误差
+  147   1      
+  148   1          // 计算微分部分
+  149   1          sptr->d_err = sptr->err - sptr->err_last;  // 微分误差 = 当前误差 - 上次误差
+  150   1          sptr->kd_out = sptr->kd * sptr->d_err;  // 微分项输出 = Kd * 微分误差
+  151   1      
+  152   1          // 计算PID输出
+  153   1          Pwm = sptr->kp_out + sptr->integral_out + sptr->kd_out;
+  154   1      
+  155   1          // 输出限制
+  156   1          if (Pwm > sptr->limit_max) {
+  157   2              Pwm = sptr->limit_max;  // 限制最大输出
+  158   2          } else if (Pwm < sptr->limit_min) {
+  159   2              Pwm = sptr->limit_min;  // 限制最小输出
+  160   2          }
+  161   1      
+  162   1          // 更新历史误差
+  163   1          sptr->err_last = sptr->err;  // 存储当前误差，用于下一次的微分计算
+  164   1      
+  165   1          return Pwm;  // 返回PID输出
+  166   1      }
+  167          
+  168          
+  169          
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =      2730     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =      1280     ------
+  xdata-const size     =    ------     ------
+  edata size           =    ------     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =    ------     ------
+C251 COMPILER V5.60.0,  PID                                                                30/12/24  14:01:21  PAGE 4   
+
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,181 +1,158 @@
-C251 COMPILER V5.60.0,  key                                                                15/07/24  23:32:10  PAGE 1   
+C251 COMPILER V5.60.0,  key                                                                19/12/24  21:08:20  PAGE 1   
 
 
 C251 COMPILER V5.60.0, COMPILATION OF MODULE key
 OBJECT MODULE PLACED IN .\Out_File\key.obj
-COMPILER INVOKED BY: D:\c51-keil\C251\BIN\C251.EXE Out_File\key.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCDIR
-                    -(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc;..
-                    -\USER\src;..\..\Libraries\seekfree_components;.\Out_File) DEBUG PRINT(.\Out_File\key.lst) TABS(2) OBJECT(.\Out_File\key.
-                    -obj) 
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE Out_File\key.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCDIR(
+                    -..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc;..\
+                    -USER\src;..\..\Libraries\seekfree_components;.\Out_File) DEBUG PRINT(.\Out_File\key.lst) TABS(2) OBJECT(.\Out_File\key.o
+                    -bj) 
 
 stmt  level    source
 
-    1          #include "headfile.h"
+    1          #include "headfile.h" // 包含头文件，确保所有必要的函数和定义可用
     2          
-    3          extern float set_turn;
-    4          char bizhangSTARTFlag = 0;
-    5          int switch_shizi_circle = 0;      //Ԫ�ز�����ʾ�л�
-    6          extern int judge_sign;    //Ԫ���ж�������־
+    3          extern float set_turn; // 外部变量，表示转向设置
+    4          char bizhangSTARTFlag = 0; // 标志位，表示是否开始某种操作
+    5          int switch_shizi_circle = 0; // 变量，表示某种状态的指示
+    6          extern int judge_sign; // 外部变量，用于判断某种信号
     7          
-    8          
-    9          char motor_start = 0;
-   10          char key_function_flag = 1;
-   11          char cricle_order = 20;
-   12          char bizhang_order = 0;
-   13          char cricle_function_switch = 1;
-   14          
-   15          
-   16          void key(void)      //���ð�������OLED
-   17          {
-   18   1        if(KEY0 == 0)      //�л�ģʽ
-   19   1        {
-   20   2          delay_ms(10);
-   21   2          if(KEY0 == 0)
-   22   2          {
-   23   3            while(KEY0 == 0);
-   24   3            
-   25   3            if(motor_start==1)
-   26   3            {
-   27   4              l_pwm=0;    //�ֶ����߱���
-   28   4              r_pwm=0;
-   29   4              mr_pid.Bias=0;
-   30   4              ml_pid.Bias=0;
-   31   4      
-   32   4              pwm_duty(MOTOR1,0); //��
-   33   4              pwm_duty(MOTOR2,0); //��
+    8          char motor_start = 0; // 电机启动状态标志
+    9          char key_function_flag = 1; // 当前按键功能标志
+   10          char cricle_order = 20; // 圆形运动的指令
+   11          char bizhang_order = 0; // 直线运动的指令
+   12          char cricle_function_switch = 1; // 圆形功能开关
+   13          
+   14          void key(void) // 处理按键输入
+   15          {
+   16   1        if(KEY0 == 0) // 检测 KEY0 按键
+   17   1        {
+   18   2          delay_ms(10); // 防抖延迟
+   19   2          if(KEY0 == 0) // 再次确认按键状态
+   20   2          {
+   21   3            while(KEY0 == 0); // 等待按键释放
+   22   3            
+   23   3            if(motor_start == 1) // 如果电机已启动
+   24   3            {
+   25   4              l_pwm = 0; // 停止左电机
+   26   4              r_pwm = 0; // 停止右电机
+   27   4              mr_pid.Bias = 0; // PID 控制偏差清零
+   28   4              ml_pid.Bias = 0; // PID 控制偏差清零
+   29   4      
+   30   4              pwm_duty(MOTOR1, 0); // 设置电机1 PWM 为 0
+   31   4              pwm_duty(MOTOR2, 0); // 设置电机2 PWM 为 0
+   32   4              
+   33   4              motor_start = 0; // 更新电机状态为停止
    34   4              
-   35   4              motor_start = 0;
-   36   4              
-   37   4            }
-   38   3            else
-   39   3            {
-   40   4              motor_start = 1;
-   41   4            }
-   42   3          
-   43   3          }
-   44   2        }
-   45   1      
-   46   1        if(KEY1 == 0)
-   47   1        {
-   48   2          delay_ms(10);
-   49   2          if(KEY1 == 0)
-   50   2          {
-   51   3      
-   52   3            while(!KEY1); //�ȴ������ɿ�
-   53   3            ips_page+=1;
-   54   3            if(ips_page==4)
-   55   3            {
-   56   4              ips_page=1;
-C251 COMPILER V5.60.0,  key                                                                15/07/24  23:32:10  PAGE 2   
+   35   4            }
+   36   3            else // 如果电机未启动
+   37   3            {
+   38   4              motor_start = 1; // 启动电机
+   39   4            }
+   40   3          }
+   41   2        }
+   42   1      
+   43   1        if(KEY1 == 0) // 检测 KEY1 按键
+   44   1        {
+   45   2          delay_ms(10); // 防抖延迟
+   46   2          if(KEY1 == 0) // 再次确认按键状态
+   47   2          {
+   48   3            while(!KEY1); // 等待按键释放
+   49   3            ips_page += 1; // 切换 IPS 页面
+   50   3            if(ips_page == 4) // 如果页面超过 3，重置为 1
+   51   3            {
+   52   4              ips_page = 1;
+   53   4            }
+   54   3          }
+   55   2        }
+   56   1        
+C251 COMPILER V5.60.0,  key                                                                19/12/24  21:08:20  PAGE 2   
 
-   57   4            }
-   58   3            
-   59   3          }
-   60   2        }
-   61   1        
-   62   1        
-   63   1        if(KEY2 == 0)         //�����л�ҳ��
-   64   1        {
-   65   2          delay_ms(3);
-   66   2          if(KEY2 == 0)
-   67   2          {
-   68   3            while(KEY2 == 0);
-   69   3            
-   70   3            key_function_flag+=1;
-   71   3            if(key_function_flag==5)
-   72   3            {
-   73   4              key_function_flag=1;
-   74   4            }
-   75   3            
-   76   3            
-   77   3            
-   78   3          }
-   79   2        }
-   80   1        
-   81   1        if(KEY3 == 0)
-   82   1        {
-   83   2          delay_ms(10);
-   84   2          if(KEY3 == 0)
-   85   2          {
-   86   3            
-   87   3            while(KEY3 == 0);
-   88   3          
-   89   3            switch(key_function_flag) //���ܼ�
-   90   3            {
-   91   4              case 1:   //����˳��
-   92   4                
-   93   4                bizhang_order += 2;
-   94   4                if(bizhang_order > 20)
-   95   4                {
-   96   5                  bizhang_order = 0;
-   97   5                }
-   98   4                break;
-   99   4              
-  100   4              case 2:   //Բ��˳��
-  101   4                
-  102   4                cricle_order += 2;
-  103   4                if(cricle_order > 20)
-  104   4                {
-  105   5                  cricle_order = 0;
-  106   5                }
-  107   4                break;
-  108   4              
-  109   4              case 3:   //�ı��ٶ�
-  110   4                
-  111   4                r_target_speed += 2;
-  112   4                l_target_speed += 2;
-  113   4                target_speed_save = l_target_speed;
-  114   4                break;
-  115   4              
-  116   4              case 4:
-  117   4                
-  118   4                cricle_function_switch++;
-  119   4                if(cricle_function_switch > 1)
-  120   4                {
-  121   5                  cricle_function_switch = 0;
-  122   5                }
-C251 COMPILER V5.60.0,  key                                                                15/07/24  23:32:10  PAGE 3   
+   57   1        if(KEY2 == 0) // 检测 KEY2 按键
+   58   1        {
+   59   2          delay_ms(3); // 防抖延迟
+   60   2          if(KEY2 == 0) // 再次确认按键状态
+   61   2          {
+   62   3            while(KEY2 == 0); // 等待按键释放
+   63   3            
+   64   3            key_function_flag += 1; // 切换按键功能
+   65   3            if(key_function_flag == 5) // 如果功能超过 4，重置为 1
+   66   3            {
+   67   4              key_function_flag = 1;
+   68   4            }
+   69   3          }
+   70   2        }
+   71   1        
+   72   1        if(KEY3 == 0) // 检测 KEY3 按键
+   73   1        {
+   74   2          delay_ms(10); // 防抖延迟
+   75   2          if(KEY3 == 0) // 再次确认按键状态
+   76   2          {
+   77   3            while(KEY3 == 0); // 等待按键释放
+   78   3            
+   79   3            switch(key_function_flag) // 根据当前功能执行不同操作
+   80   3            {
+   81   4              case 1: // 直线模式
+   82   4                bizhang_order += 2; // 增加直线指令
+   83   4                if(bizhang_order > 20) // 如果指令超过 20，重置为 0
+   84   4                {
+   85   5                  bizhang_order = 0;
+   86   5                }
+   87   4                break;
+   88   4              
+   89   4              case 2: // 圆形模式
+   90   4                cricle_order += 2; // 增加圆形指令
+   91   4                if(cricle_order > 20) // 如果指令超过 20，重置为 0
+   92   4                {
+   93   5                  cricle_order = 0;
+   94   5                }
+   95   4                break;
+   96   4              
+   97   4              case 3: // 增加速度
+   98   4                r_target_speed += 2; // 增加右电机目标速度
+   99   4                l_target_speed += 2; // 增加左电机目标速度
+  100   4                target_speed_save = l_target_speed; // 保存左电机目标速度
+  101   4                break;
+  102   4              
+  103   4              case 4: // 切换圆形功能
+  104   4                cricle_function_switch++; // 切换状态
+  105   4                if(cricle_function_switch > 1) // 如果状态超过 1，重置为 0
+  106   4                {
+  107   5                  cricle_function_switch = 0;
+  108   5                }
+  109   4                break;
+  110   4            }
+  111   3          }
+  112   2        }
+  113   1        
+  114   1        if(KEY4 == 0) // 检测 KEY4 按键
+  115   1        {
+  116   2          delay_ms(10); // 防抖延迟
+  117   2          if(KEY4 == 0) // 再次确认按键状态
+  118   2          {
+  119   3            while(KEY4 == 0); // 等待按键释放
+  120   3            
+  121   3            switch(key_function_flag) // 根据当前功能执行不同操作
+  122   3            {
+C251 COMPILER V5.60.0,  key                                                                19/12/24  21:08:20  PAGE 3   
 
-  123   4                
-  124   4            }
-  125   3              
-  126   3          }
-  127   2        }
-  128   1        
-  129   1        if(KEY4 == 0)
-  130   1        {
-  131   2          delay_ms(10);
-  132   2          if(KEY4 == 0)
-  133   2          {
-  134   3            while(KEY4 == 0); //�ȴ������ɿ�
-  135   3            
-  136   3          switch(key_function_flag)
-  137   3            {
-  138   4              case 1:
-  139   4                
-  140   4                bizhang_order += -1;
-  141   4                break;
-  142   4              
-  143   4              case 2:
-  144   4                
-  145   4                cricle_order += -1;
-  146   4                break;
-  147   4              
-  148   4              case 3:
-  149   4                
-  150   4                r_target_speed += -1;
-  151   4                l_target_speed += -1;
-  152   4                target_speed_save = l_target_speed;
-  153   4                break;
-  154   4              
-  155   4            }
-  156   3          }
-  157   2        }
-  158   1        
-  159   1        
-  160   1      }
-  161          
-  162          
+  123   4              case 1: // 直线模式
+  124   4                bizhang_order += -1; // 减少直线指令
+  125   4                break;
+  126   4              
+  127   4              case 2: // 圆形模式
+  128   4                cricle_order += -1; // 减少圆形指令
+  129   4                break;
+  130   4              
+  131   4              case 3: // 减少速度
+  132   4                r_target_speed += -1; // 减少右电机目标速度
+  133   4                l_target_speed += -1; // 减少左电机目标速度
+  134   4                target_speed_save = l_target_speed; // 保存左电机目标速度
+  135   4                break;
+  136   4            }
+  137   3          }
+  138   2        }
+  139   1      }
 
 
 Module Information          Static   Overlayable

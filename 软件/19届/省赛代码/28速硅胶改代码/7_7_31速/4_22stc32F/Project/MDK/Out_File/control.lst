@@ -1,25 +1,25 @@
-C251 COMPILER V5.60.0,  control                                                            15/07/24  23:32:10  PAGE 1   
+C251 COMPILER V5.60.0,  control                                                            19/12/24  21:08:20  PAGE 1   
 
 
 C251 COMPILER V5.60.0, COMPILATION OF MODULE control
 OBJECT MODULE PLACED IN .\Out_File\control.obj
-COMPILER INVOKED BY: D:\c51-keil\C251\BIN\C251.EXE Out_File\control.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE IN
-                    -CDIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\in
-                    -c;..\USER\src;..\..\Libraries\seekfree_components;.\Out_File) DEBUG PRINT(.\Out_File\control.lst) TABS(2) OBJECT(.\Out_F
-                    -ile\control.obj) 
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE Out_File\control.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INC
+                    -DIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc
+                    -;..\USER\src;..\..\Libraries\seekfree_components;.\Out_File) DEBUG PRINT(.\Out_File\control.lst) TABS(2) OBJECT(.\Out_Fi
+                    -le\control.obj) 
 
 stmt  level    source
 
     1          #include "headfile.h"
     2          
-    3          PID_TypDef mr_pid,ml_pid,R_pid,L_pid,Steer_pid,turn_pid,w_pid;  //×óÓÒµç»úPID
+    3          PID_TypDef mr_pid,ml_pid,R_pid,L_pid,Steer_pid,turn_pid,w_pid;  //ï¿½ï¿½ï¿½Òµï¿½ï¿½PID
     4          PID_TypDef s_pid;
     5          
     6          void PID_init(PID_TypDef* sptr)
     7          {
-    8   1          sptr->Kp = 0.0;             // ±ÈÀý³£Êý Proportional Const
-    9   1          sptr->Ki = 0.0;               // »ý·Ö³£Êý Integral Const
-   10   1          sptr->Kd = 0.0;             // Î¢·Ö³£Êý Derivative Const
+    8   1          sptr->Kp = 0.0;             // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Proportional Const
+    9   1          sptr->Ki = 0.0;               // ï¿½ï¿½ï¿½Ö³ï¿½ï¿½ï¿½ Integral Const
+   10   1          sptr->Kd = 0.0;             // Î¢ï¿½Ö³ï¿½ï¿½ï¿½ Derivative Const
    11   1          sptr->Kd2 = 0.0;
    12   1          sptr->Bias      = 0.0;    
    13   1          sptr->Integral  = 0.0;
@@ -29,7 +29,7 @@ stmt  level    source
    17   1            
    18   1      }
    19          
-   20          //PIDÉèÖÃ
+   20          
    21          void PID_Set(PID_TypDef *PID,float Kp,float Ki,float Kd)
    22          {
    23   1        PID->Kp = Kp;
@@ -45,16 +45,16 @@ stmt  level    source
    33   1        PID->Kd2 = Kd2;
    34   1      }
    35          
-   36          //ËÙ¶È»·(ÔöÁ¿Ê½PID)
+   36          //ï¿½Ù¶È»ï¿½(ï¿½ï¿½ï¿½ï¿½Ê½PID)
    37          float IncPID(float Encoder,float Target,PID_TypDef* sptr) 
    38          {
    39   1        float Pwm;
    40   1        
-   41   1        sptr->Bias = Target - Encoder;                                     // ¼ÆËãµ±Ç°Îó²î
+   41   1        sptr->Bias = Target - Encoder;                                     // ï¿½ï¿½ï¿½ãµ±Ç°ï¿½ï¿½ï¿½
    42   1        Pwm = sptr->Kp * (sptr->Bias-sptr->Last_Bias)+sptr->Ki * sptr->Bias +sptr->Kd * (sptr->Bias-2*sptr->Las
              -t_Bias+sptr->Pre_Bias);  //P I D
    43   1      //  p=((sptr->Bias-sptr->Last_Bias));
-   44   1        sptr->Pre_Bias=sptr->Last_Bias;                          // ´æ´¢Îó²î£¬ÓÃÓÚÏÂ´Î¼ÆËã
+   44   1        sptr->Pre_Bias=sptr->Last_Bias;                          // ï¿½æ´¢ï¿½ï¿½î£¬ï¿½ï¿½ï¿½ï¿½ï¿½Â´Î¼ï¿½ï¿½ï¿½
    45   1        sptr->Last_Bias=sptr->Bias;   
    46   1        
    47   1      //  if(abs(Pwm)<=10)
@@ -62,14 +62,14 @@ stmt  level    source
    49   1      //    Pwm=0;
    50   1      //  }
    51   1         
-   52   1        return Pwm;                                    // ·µ»ØÔöÁ¿Öµ
+   52   1        return Pwm;                                    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµ
    53   1        
    54   1      }
    55          
-C251 COMPILER V5.60.0,  control                                                            15/07/24  23:32:10  PAGE 2   
+C251 COMPILER V5.60.0,  control                                                            19/12/24  21:08:20  PAGE 2   
 
    56          
-   57          //Î»ÖÃÊ½PID
+   57          //Î»ï¿½ï¿½Ê½PID
    58          float PstPID(float Angle, float Target,PID_TypDef* sptr)
    59          {
    60   1        float Pwm;
@@ -87,11 +87,11 @@ stmt  level    source
    72   1        
    73   1      }
    74          
-   75          //×ªÏòÔöÁ¿Ê½PID
+   75          //×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê½PID
    76          float turn_PstPID(float turn_error,PID_TypDef* sptr)
    77          {
    78   1        float Pwm;
-   79   1        sptr->Bias = turn_error;                                     // ¼ÆËãµ±Ç°Îó²î
+   79   1        sptr->Bias = turn_error;                                     // ï¿½ï¿½ï¿½ãµ±Ç°ï¿½ï¿½ï¿½
    80   1        
    81   1        Pwm = sptr->Kp * (sptr->Bias-sptr->Last_Bias)+sptr->Ki * sptr->Bias +sptr->Kd * sptr->Bias *fabs(sptr->B
              -ias)+sptr->Kd2*sptr->Bias *sptr->Bias *sptr->Bias ;  //P I D
@@ -104,12 +104,12 @@ stmt  level    source
              ->Bias) * 1.1;  
    87   1        
    88   1      //  p=((sptr->Bias-sptr->Last_Bias));
-   89   1        sptr->Pre_Bias=sptr->Last_Bias;                          // ´æ´¢Îó²î£¬ÓÃÓÚÏÂ´Î¼ÆËã
+   89   1        sptr->Pre_Bias=sptr->Last_Bias;                          // ï¿½æ´¢ï¿½ï¿½î£¬ï¿½ï¿½ï¿½ï¿½ï¿½Â´Î¼ï¿½ï¿½ï¿½
    90   1        sptr->Last_Bias=sptr->Bias;   
    91   1        
    92   1      
    93   1         
-   94   1        return Pwm;                                    // ·µ»ØÔöÁ¿Öµ
+   94   1        return Pwm;                                    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµ
    95   1        
    96   1        
    97   1      }
@@ -135,7 +135,7 @@ Module Information          Static   Overlayable
   idata size           =    ------     ------
   pdata size           =    ------     ------
   xdata size           =    ------     ------
-C251 COMPILER V5.60.0,  control                                                            15/07/24  23:32:10  PAGE 3   
+C251 COMPILER V5.60.0,  control                                                            19/12/24  21:08:20  PAGE 3   
 
   xdata-const size     =    ------     ------
   edata size           =       340     ------

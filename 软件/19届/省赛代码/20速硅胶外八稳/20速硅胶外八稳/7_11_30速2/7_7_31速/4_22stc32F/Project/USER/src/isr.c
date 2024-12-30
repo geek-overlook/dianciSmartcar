@@ -163,7 +163,7 @@ void TM1_Isr() interrupt 3
 //			barrier=0;
 //		}
 	
-
+		//电感值作差
 		error = (5.3*(sqrt(adc[0])-sqrt(adc[6]))+5.2*(sqrt(adc[1])-sqrt(adc[5])))/(adc[1]+adc[5]+adc[6]+adc[0]+5.4*adc[3]);//2.6   3.27   2.8
 	
 		//error = (+2.3*(sqrt(adc[1])-sqrt(adc[5])))/(adc[1]+adc[5]+2.1*adc[3]);		//不用斜电杆

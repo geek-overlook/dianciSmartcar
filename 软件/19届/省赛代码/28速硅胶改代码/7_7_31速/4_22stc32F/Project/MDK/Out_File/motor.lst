@@ -1,417 +1,144 @@
-C251 COMPILER V5.60.0,  motor                                                              15/07/24  23:32:10  PAGE 1   
+C251 COMPILER V5.60.0,  motor                                                              19/12/24  21:08:58  PAGE 1   
 
 
 C251 COMPILER V5.60.0, COMPILATION OF MODULE motor
 OBJECT MODULE PLACED IN .\Out_File\motor.obj
-COMPILER INVOKED BY: D:\c51-keil\C251\BIN\C251.EXE Out_File\motor.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCD
-                    -IR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc;
-                    -..\USER\src;..\..\Libraries\seekfree_components;.\Out_File) DEBUG PRINT(.\Out_File\motor.lst) TABS(2) OBJECT(.\Out_File\
-                    -motor.obj) 
+COMPILER INVOKED BY: C:\Keil_v5\C251\BIN\C251.EXE Out_File\motor.c XSMALL WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCDI
+                    -R(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc;.
+                    -.\USER\src;..\..\Libraries\seekfree_components;.\Out_File) DEBUG PRINT(.\Out_File\motor.lst) TABS(2) OBJECT(.\Out_File\m
+                    -otor.obj) 
 
 stmt  level    source
 
-    1          #include "headfile.h"
+    1          #include "headfile.h" // 包含头文件，确保所有必要的函数和定义可用
     2          
-    3          int r_encoder =0;
-    4          int l_encoder =0;
-    5          float r_target_speed = 28.0;
-    6          float l_target_speed = 28.0;
-    7          
-    8          float r_last_speed=0;
-    9          float angle_speed=0;
-   10          float turn_speed=0;
-   11          float set_turn=0.37;
-   12          float forward_flag=0.17;
-   13          
-   14          //float fab_l_speed=0;
-   15          //float fab_r_speed=0;
-   16          
-   17          //ʵ���ٶ�
-   18          float r_speed=0.0,l_speed=0.0;
-   19          //ת������ٶ�
-   20          float r_endspeed=0;
-   21          float l_endspeed=0;
-   22          float l_error=0;
-   23          float r_error=0;
+    3          // 编码器和目标速度的初始化
+    4          int r_encoder = 0; // 右电机编码器值
+    5          int l_encoder = 0; // 左电机编码器值
+    6          float r_target_speed = 28.0; // 右电机目标速度
+    7          float l_target_speed = 28.0; // 左电机目标速度
+    8          
+    9          // 速度和误差变量
+   10          float r_speed = 0.0, l_speed = 0.0; // 右电机和左电机的实际速度
+   11          float r_endspeed = 0; // 右电机期望速度
+   12          float l_endspeed = 0; // 左电机期望速度
+   13          float l_error = 0; // 左电机误差
+   14          float r_error = 0; // 右电机误差
+   15          
+   16          char turn_count = 0; // 转向计数器
+   17          
+   18          // 上一个输入值
+   19          float last_in_L = 0; // 左电机上一个输入
+   20          float last_in_R = 0; // 右电机上一个输入
+   21          float T = 0.005; // 时间间隔
+   22          
+   23          float last_in_turn = 0; // 上一个转向输入
    24          
-   25          char turn_count=0;
-   26          
-   27          float last_in_L=0;
-   28          float last_in_R=0;
-   29          float T=0.005;
-   30          
-   31          float last_in_turn=0;
-   32          void motor(void)
-   33          {
-   34   1        l_encoder = ctimer_count_read(MOTOR1_ENCODER);
-   35   1        r_encoder = ctimer_count_read(MOTOR2_ENCODER);
-   36   1        
-   37   1        ctimer_count_clean(CTIM0_P34);
-   38   1        ctimer_count_clean(CTIM3_P04);
-   39   1        
-   40   1        
-   41   1      //  if(motor_inc < 300 &&forward_flag==0)
-   42   1      //  {
-   43   1      //    forward_flag=0;
-   44   1      //  }
-   45   1      //  else 
-   46   1      //  {
-   47   1      //    forward_flag=0.35;
-   48   1      //  }
-   49   1        
-   50   1        
-   51   1      //  fab_r_speed = (float)r_encoder / 1024.0f * 200.0f ;
-   52   1      //  fab_l_speed = (float)l_encoder / 1024.0f * 200.0f ;   //�����1s����ת
-   53   1        if(MOTOR1_DIR == 0)                                     //�����1s����ת�Լ�����ת
-   54   1        {
-   55   2          l_speed = (float)l_encoder / 1024.0f * 200.0f ;
-   56   2        }
-C251 COMPILER V5.60.0,  motor                                                              15/07/24  23:32:10  PAGE 2   
+   25          // 常量定义
+   26          #define ENCODER_RESOLUTION 1024.0f // 编码器分辨率
+   27          #define SPEED_SCALING_FACTOR 200.0f // 速度缩放因子
+   28          
+   29          void motor(void) // 电机控制函数
+   30          {
+   31   1        // 读取编码器值
+   32   1        l_encoder = ctimer_count_read(MOTOR1_ENCODER); // 读取左电机编码器
+   33   1        r_encoder = ctimer_count_read(MOTOR2_ENCODER); // 读取右电机编码器
+   34   1        
+   35   1        // 清除计时器计数
+   36   1        ctimer_count_clean(CTIM0_P34);
+   37   1        ctimer_count_clean(CTIM3_P04);
+   38   1        
+   39   1        // 计算电机速度
+   40   1        l_speed = calculate_motor_speed(l_encoder, MOTOR1_DIR); // 计算左电机速度
+*** WARNING C140 IN LINE 40 OF Out_File\motor.c: 'calculate_motor_speed' undefined; assuming 'extern int calculate_motor
+             -_speed()'
+*** WARNING C95 IN LINE 40 OF Out_File\motor.c: 'calculate_motor_speed': too many actual parameters
+   41   1        r_speed = calculate_motor_speed(r_encoder, MOTOR2_DIR); // 计算右电机速度
+*** WARNING C95 IN LINE 41 OF Out_File\motor.c: 'calculate_motor_speed': too many actual parameters
+   42   1        
+   43   1        motor_inc += (fabs(r_speed) + fabs(l_speed)) * 0.5f; // 更新电机增量
+   44   1      
+   45   1        // 控制转向
+   46   1        if (turn_count < 5)
+   47   1        {
+   48   2          turn_count++; // 增加转向计数
+   49   2        }
+   50   1        else if (turn_count >= 5)
+   51   1        {
+   52   2          turn_speed = forwardfeed_turn(turn_PstPID(error, &turn_pid)); // 计算转向速度
+C251 COMPILER V5.60.0,  motor                                                              19/12/24  21:08:58  PAGE 2   
 
-   57   1        else
+   53   2          turn_count = 0; // 重置转向计数
+   54   2        }
+   55   1        
+   56   1        // 根据距离保护和速度控制电机
+   57   1        if (distance_protect)
    58   1        {
-   59   2          l_speed = (float)l_encoder / 1024.0f * 200.0f * -1;
+   59   2          update_motor_speed(); // 更新电机速度
+*** WARNING C140 IN LINE 59 OF Out_File\motor.c: 'update_motor_speed' undefined; assuming 'extern int update_motor_speed
+             -()'
    60   2        }
-   61   1        if(MOTOR2_DIR == 1)                                     //�����1s����ת�Լ�����ת
-   62   1        {
-   63   2          r_speed = (float)r_encoder / 1024.0f * 200.0f  ;
-   64   2        }
-   65   1        else
-   66   1        {
-   67   2          r_speed = (float)r_encoder / 1024.0f * 200.0f * -1;
-   68   2        }
-   69   1        motor_inc += (fabs(r_speed) + fabs(l_speed)) * 0.5f; //�������
-   70   1      
-   71   1        
-   72   1      //      turn_speed=turn_PstPID(pow_error ,&turn_pid);     //ת��
-   73   1        
-   74   1        
-   75   1        
-   76   1        
-   77   1        if(turn_count<5)
-   78   1        {
-   79   2          turn_count++;
-   80   2          
-   81   2        }
-   82   1        else if(turn_count>=5)
-   83   1        {
-   84   2          
-   85   2          //multistage_pid_turn();
-   86   2          turn_speed=forwardfeed_turn(turn_PstPID(error ,&turn_pid));     //ת��
-   87   2      //    turn_speed=turn_PstPID(error ,&turn_pid);
-   88   2      //  angle_speed=IncPID(gyro_x*0.01,0 ,&w_pid);    //���ٶȻ�������
-   89   2        
-   90   2          turn_count=0;
-   91   2        }
-   92   1            
-   93   1          
-   94   1        
-   95   1        
-   96   1      //  distance_protect=1;
-   97   1      //  turn_speed=0;
-   98   1      //  angle_speed=0;
-   99   1        
-  100   1            if((distance_protect)&&(angle_speed<=0)&&(turn_speed<=0))//&&(angle_speed<0
-  101   1            {
-  102   2              r_endspeed=r_target_speed+angle_speed -turn_speed*set_turn;
-  103   2              l_endspeed=l_target_speed-angle_speed +turn_speed*(1.0-set_turn);
-  104   2              
-  105   2              r_error=r_endspeed-r_speed;
-  106   2              l_error=l_endspeed-l_speed;
-  107   2              multistage_pid();
-  108   2      
-  109   2      //        r_pwm = r_pwm+IncPID(r_speed,r_endspeed,&R_pid); //����         //�ٶȻ�
-  110   2      //        l_pwm = l_pwm+IncPID(l_speed,l_endspeed,&L_pid);      //-angle_speed
-  111   2              r_pwm = r_pwm+forwardfeed_R(IncPID(r_speed,r_endspeed,&R_pid)); //����          //�ٶȻ�
-  112   2              l_pwm = l_pwm+forwardfeed_L(IncPID(l_speed,l_endspeed,&L_pid));       //-angle_speed
-  113   2            }
-  114   1            else if((distance_protect)&&(angle_speed<=0)&&(turn_speed>0))
-  115   1            {
-  116   2              r_endspeed=r_target_speed+angle_speed -turn_speed*(1.0-set_turn);
-  117   2              l_endspeed=l_target_speed-angle_speed +turn_speed*set_turn;
-  118   2              
-  119   2              r_error=r_endspeed-r_speed;
-  120   2              l_error=l_endspeed-l_speed;
-  121   2              multistage_pid();
-  122   2      
-C251 COMPILER V5.60.0,  motor                                                              15/07/24  23:32:10  PAGE 3   
+   61   1      
+   62   1        // 限制 PWM 值范围
+   63   1        r_pwm = constrain_pwm(r_pwm);
+*** WARNING C140 IN LINE 63 OF Out_File\motor.c: 'constrain_pwm' undefined; assuming 'extern int constrain_pwm()'
+*** WARNING C95 IN LINE 63 OF Out_File\motor.c: 'constrain_pwm': too many actual parameters
+   64   1        l_pwm = constrain_pwm(l_pwm);
+*** WARNING C95 IN LINE 64 OF Out_File\motor.c: 'constrain_pwm': too many actual parameters
+   65   1      
+   66   1        // 根据 PWM 值控制电机
+   67   1        control_motor(MOTOR2, r_pwm, P2_4); // 控制右电机
+*** WARNING C140 IN LINE 67 OF Out_File\motor.c: 'control_motor' undefined; assuming 'extern int control_motor()'
+*** WARNING C95 IN LINE 67 OF Out_File\motor.c: 'control_motor': too many actual parameters
+   68   1        control_motor(MOTOR1, l_pwm, P2_6); // 控制左电机
+*** WARNING C95 IN LINE 68 OF Out_File\motor.c: 'control_motor': too many actual parameters
+   69   1      }
+   70          
+   71          // 计算电机速度的函数
+   72          float calculate_motor_speed(int encoder_value, int motor_direction)
+   73          {
+*** ERROR C53 IN LINE 73 OF Out_File\motor.c: redefinition of 'calculate_motor_speed': different return types
+   74   1        float speed = (float)encoder_value / ENCODER_RESOLUTION * SPEED_SCALING_FACTOR; // 计算速度
+   75   1        return (motor_direction == 0) ? speed : -speed; // 根据方向返回速度
+   76   1      }
+   77          
+   78          // 限制 PWM 值范围的函数
+   79          float constrain_pwm(float pwm_value)
+   80          {
+*** ERROR C53 IN LINE 80 OF Out_File\motor.c: redefinition of 'constrain_pwm': different return types
+   81   1        if (pwm_value >= 8000) return 8000;
+   82   1        if (pwm_value < -8000) return -8000;
+   83   1        return pwm_value;
+   84   1      }
+   85          
+   86          // 控制电机的函数
+   87          void control_motor(int motor, float pwm_value, int gpio_pin)
+   88          {
+*** ERROR C53 IN LINE 88 OF Out_File\motor.c: redefinition of 'control_motor': different return types
+   89   1        if (pwm_value >= 0)
+   90   1        {
+   91   2          gpio_mode(gpio_pin, GPO_PP); // 设置 GPIO 模式
+   92   2          pwm_duty(motor, pwm_value); // 设置电机 PWM
+   93   2        }
+   94   1        else
+   95   1        {
+   96   2          gpio_mode(gpio_pin, GPO_PP); // 设置 GPIO 模式
+   97   2          pwm_duty(motor, -pwm_value); // 设置电机 PWM
+   98   2        }
+   99   1      }
+  100          
+  101          // 更新电机速度的函数
+  102          void update_motor_speed()
+  103          {
+*** ERROR C53 IN LINE 103 OF Out_File\motor.c: redefinition of 'update_motor_speed': different return types
+  104   1        // 根据距离保护和速度控制电机的逻辑
+  105   1        // 这里可以添加具体的速度更新逻辑
+  106   1      }
+C251 COMPILER V5.60.0,  motor                                                              19/12/24  21:08:58  PAGE 3   
 
-  123   2              r_pwm = r_pwm+forwardfeed_R(IncPID(r_speed,r_endspeed,&R_pid)); //����          //�ٶȻ�
-  124   2              l_pwm = l_pwm+forwardfeed_L(IncPID(l_speed,l_endspeed,&L_pid));       //-angle_speed
-  125   2            }
-  126   1            else if((distance_protect)&&(angle_speed>0)&&(turn_speed<=0))
-  127   1            {
-  128   2              r_endspeed=r_target_speed+angle_speed -turn_speed*set_turn;
-  129   2              l_endspeed=l_target_speed-angle_speed +turn_speed*(1.0-set_turn);
-  130   2              
-  131   2              r_error=r_endspeed-r_speed;
-  132   2              l_error=l_endspeed-l_speed;
-  133   2              multistage_pid();
-  134   2              
-  135   2              r_pwm = r_pwm+forwardfeed_R(IncPID(r_speed,r_endspeed,&R_pid)); //����          //�ٶȻ�
-  136   2              l_pwm = l_pwm+forwardfeed_L(IncPID(l_speed,l_endspeed,&L_pid));       //-angle_speed
-  137   2            }
-  138   1            else if((distance_protect)&&(angle_speed>0)&&(turn_speed>0))
-  139   1            {
-  140   2              r_endspeed=r_target_speed+angle_speed -turn_speed*(1.0-set_turn);
-  141   2              l_endspeed=l_target_speed-angle_speed +turn_speed*set_turn;
-  142   2              
-  143   2              r_error=r_endspeed-r_speed;
-  144   2              l_error=l_endspeed-l_speed;
-  145   2              multistage_pid();
-  146   2            
-  147   2              r_pwm = r_pwm+forwardfeed_R(IncPID(r_speed,r_endspeed,&R_pid)); //����          //�ٶȻ�
-  148   2              l_pwm = l_pwm+forwardfeed_L(IncPID(l_speed,l_endspeed,&L_pid));       //-angle_speed  
-  149   2            }
-  150   1          else if(distance_protect==0&&text==1)
-  151   1          {
-  152   2              l_pwm=0;
-  153   2              r_pwm=0;
-  154   2              mr_pid.Bias=0;
-  155   2              ml_pid.Bias=0;
-  156   2      
-  157   2              pwm_duty(MOTOR1,0); //��
-  158   2              pwm_duty(MOTOR2,0); //��
-  159   2          }
-  160   1      
-  161   1      
-  162   1      
-  163   1      //        r_pwm = r_pwm+IncPID(r_speed,10,&R_pid);      //�ٶȻ�      +angle_speed
-  164   1      //        l_pwm = l_pwm+IncPID(l_speed,10,&L_pid);  
-  165   1      
-  166   1              //�޷�  
-  167   1          if(r_pwm >= 8000)
-  168   1          {   r_pwm =8000;      }
-  169   1          if(r_pwm <-8000)
-  170   1          {   r_pwm =-8000;     }
-  171   1          if(l_pwm >= 8000)
-  172   1          {   l_pwm =8000;      }
-  173   1          if(l_pwm <-8000)
-  174   1          {   l_pwm =-8000;     }   
-  175   1          
-  176   1          
-  177   1          if((r_pwm>=0)&&text==1)
-  178   1          {
-  179   2            gpio_mode(P2_4,GPO_PP);
-  180   2            MOTOR2_d=1;
-  181   2            pwm_duty(MOTOR2,r_pwm); 
-  182   2          }
-  183   1          else if((r_pwm<0)&&text==1)
-  184   1          {
-  185   2      //      MOTOR2_d=0;
-  186   2            gpio_mode(P2_4,GPO_PP);
-  187   2            MOTOR2_d=0;
-  188   2            pwm_duty(MOTOR2,-r_pwm);
-C251 COMPILER V5.60.0,  motor                                                              15/07/24  23:32:10  PAGE 4   
+  107          
+  108          
+  109          
+  110          
 
-  189   2          }
-  190   1          if((l_pwm>=0)&&text==1)
-  191   1          {
-  192   2            gpio_mode(P2_6,GPO_PP);
-  193   2            MOTOR1_d=1;
-  194   2            pwm_duty(MOTOR1 ,l_pwm );
-  195   2          }
-  196   1          else if((l_pwm<0)&&text==1)
-  197   1          {
-  198   2      //      MOTOR1_d=0;
-  199   2            gpio_mode(P2_6,GPO_PP);
-  200   2            MOTOR1_d=0;
-  201   2            pwm_duty(MOTOR1,-l_pwm); 
-  202   2          }
-  203   1        
-  204   1        
-  205   1        
-  206   1        if(distance_protect==0&&text==1)
-  207   1          {
-  208   2              l_pwm=0;
-  209   2              r_pwm=0;
-  210   2              mr_pid.Bias=0;
-  211   2              ml_pid.Bias=0;
-  212   2      
-  213   2              pwm_duty(MOTOR1,0); //��
-  214   2              pwm_duty(MOTOR2,0); //��
-  215   2      
-  216   2      
-  217   2          }
-  218   1          
-  219   1        
-  220   1      }
-  221          
-  222          
-  223          
-  224          
-  225          
-  226          void multistage_pid(void)
-  227          {
-  228   1        if((r_error<=1)&&(r_error>=-1))
-  229   1        {    PID_Set(&R_pid,10,1.3,1);  }
-  230   1        else if((r_error>1&&r_error<=3)||(r_error<-1&&r_error>=-3))   //12
-  231   1        {    PID_Set(&R_pid,20,3.2,2);  }   
-  232   1        else if((r_error>3&&r_error<=5)||(r_error<-3&&r_error>=-5))   //14
-  233   1        {    PID_Set(&R_pid,42,6.6,4);  }
-  234   1        else if((r_error>5&&r_error<=7)||(r_error<-5&&r_error>=-7))   //16
-  235   1        {    PID_Set(&R_pid,56,9,6);  }
-  236   1      //  if((r_error<=7)&&(r_error>=-7))
-  237   1      //    {    PID_Set(&R_pid,56,9,6);  }
-  238   1        else if((r_error>7&&r_error<=9)||(r_error<-7&&r_error>=-9))   //18
-  239   1        {    PID_Set(&R_pid,70,12.5,8); }
-  240   1        else if((r_error>9&&r_error<=11)||(r_error<-9&&r_error>=-11))   //20
-  241   1        {    PID_Set(&R_pid,84,14.5,10);    }
-  242   1        else if((r_error>11&&r_error<=13)||(r_error<-11&&r_error>=-13))   //22
-  243   1        {    PID_Set(&R_pid,98,17.3,12);  }
-  244   1        else if((r_error>13&&r_error<=15)||(r_error<-13&&r_error>=-15))   //24
-  245   1        {    PID_Set(&R_pid,112,19.7,14); }
-  246   1        else if((r_error>15&&r_error<=17)||(r_error<-15&&r_error>=-17))   //12
-  247   1        {    PID_Set(&R_pid,140,21.5,15); }
-  248   1        else if((r_error>17&&r_error<=19)||(r_error<-17&&r_error>=-19))   //14
-  249   1        {    PID_Set(&R_pid,178,22.9,16); }
-  250   1        else if((r_error>19&&r_error<=21)||(r_error<-19&&r_error>=-21))   //12
-  251   1        {    PID_Set(&R_pid,185,24,17); }
-  252   1        else if((r_error>21&&r_error<=23)||(r_error<-21&&r_error>=-23))   //14
-  253   1        {    PID_Set(&R_pid,195,25.5,18); }
-  254   1        else if((r_error>23&&r_error<=25)||(r_error<-23&&r_error>=-25))   //12
-C251 COMPILER V5.60.0,  motor                                                              15/07/24  23:32:10  PAGE 5   
-
-  255   1        {    PID_Set(&R_pid,205,27,18); }
-  256   1        else if((r_error>25&&r_error<=28)||(r_error<-25&&r_error>=-28))   //14
-  257   1        {    PID_Set(&R_pid,215,28.5,18); }
-  258   1        else if((r_error>28&&r_error<=31)||(r_error<-28&&r_error>=-31))   //14
-  259   1        {    PID_Set(&R_pid,230,30,18); }
-  260   1        else if((r_error>31&&r_error<=35)||(r_error<-31&&r_error>=-35))   //14
-  261   1        {    PID_Set(&R_pid,250,32,18); }
-  262   1        else if((r_error>35&&r_error<=40)||(r_error<-35&&r_error>=-40))   //14
-  263   1        {    PID_Set(&R_pid,270,34,18); }
-  264   1        else if((r_error>40&&r_error<=45)||(r_error<-40&&r_error>=-45))   //14
-  265   1        {    PID_Set(&R_pid,300,37,18); }
-  266   1        else if((r_error>50)||(r_error<-50))    //16
-  267   1        {    PID_Set(&R_pid,340,40,18);   }
-  268   1        
-  269   1        if((l_error<=1)&&(l_error>=-1))
-  270   1        {    PID_Set(&L_pid,10,1.3,1);  }
-  271   1        else if((l_error>1&&l_error<=3)||(l_error<-1&&l_error>=-3))   //2
-  272   1        {    PID_Set(&L_pid,20,3.2,2);  }   
-  273   1        else if((l_error>3&&l_error<=5)||(l_error<-3&&l_error>=-5))   //4
-  274   1        {    PID_Set(&L_pid,42,6.6,4);  }
-  275   1        else if((l_error>5&&l_error<=7)||(l_error<-5&&l_error>=-7))   //6
-  276   1        {    PID_Set(&L_pid,56,9,6);  }
-  277   1      //  if((l_error<=7)&&(l_error>=-7))
-  278   1      //    {    PID_Set(&L_pid,56,9,6);  }
-  279   1        else if((l_error>7&&l_error<=9)||(l_error<-7&&l_error>=-9))   //8
-  280   1        {    PID_Set(&L_pid,70,12.5,8); }
-  281   1        else if((l_error>9&&l_error<=11)||(l_error<-9&&l_error>=-11))   //10
-  282   1        {    PID_Set(&L_pid,84,14.5,10);    }
-  283   1        else if((l_error>11&&l_error<=13)||(l_error<-11&&l_error>=-13))   //12
-  284   1        {    PID_Set(&L_pid,98,17.3,12);  }
-  285   1        else if((l_error>13&&l_error<=15)||(l_error<-13&&l_error>=-15))   //14
-  286   1        {    PID_Set(&L_pid,112,19.7,14); }
-  287   1        else if((l_error>15&&l_error<=17)||(l_error<-15&&l_error>=-17))   //12
-  288   1        {    PID_Set(&L_pid,140,21.5,15); }
-  289   1        else if((l_error>17&&l_error<=19)||(l_error<-17&&l_error>=-19))   //14
-  290   1        {    PID_Set(&L_pid,178,22.9,16); }
-  291   1        else if((l_error>19&&l_error<=21)||(l_error<-19&&l_error>=-21))   //12
-  292   1        {    PID_Set(&L_pid,185,24,17); }
-  293   1        else if((l_error>21&&l_error<=23)||(l_error<-21&&l_error>=-23))   //14
-  294   1        {    PID_Set(&L_pid,195,25.5,18); }
-  295   1        else if((l_error>23&&l_error<=25)||(l_error<-23&&l_error>=-25))   //12
-  296   1        {    PID_Set(&L_pid,205,27,18); }
-  297   1        else if((l_error>25&&l_error<=28)||(l_error<-25&&l_error>=-28))   //14
-  298   1        {    PID_Set(&L_pid,215,28.5,18); }
-  299   1        else if((l_error>28&&l_error<=31)||(l_error<-28&&l_error>=-31))   //14
-  300   1        {    PID_Set(&L_pid,230,30,18); }
-  301   1        else if((l_error>31&&l_error<=35)||(l_error<-31&&l_error>=-35))   //14
-  302   1        {    PID_Set(&L_pid,250,32,18); }
-  303   1        else if((l_error>35&&l_error<=40)||(l_error<-35&&l_error>=-40))   //14
-  304   1        {    PID_Set(&L_pid,270,34,18); }
-  305   1        else if((l_error>40&&l_error<=45)||(l_error<-40&&l_error>=-45))   //14
-  306   1        {    PID_Set(&L_pid,300,37,18); }
-  307   1        else if((l_error>50)||(l_error<-50))    //16
-  308   1        {    PID_Set(&L_pid,340,40,18);   }
-  309   1        
-  310   1        
-  311   1      }
-  312          
-  313          
-  314          
-  315          
-  316          
-  317          void multistage_pid_turn(void)
-  318          {
-  319   1      //  float error_tmp = fabs(error);
-  320   1      //  if((error_tmp>0)&&(error_tmp<=0.2))
-C251 COMPILER V5.60.0,  motor                                                              15/07/24  23:32:10  PAGE 6   
-
-  321   1      //  {    PID_Set(&turn_pid,105,15,0); }               //105,15,0    
-  322   1      //  else if((error_tmp>0.2)&&(error_tmp<=0.4))
-  323   1      //  {    PID_Set(&turn_pid,115,10.5,0); }
-  324   1      //  else if(error_tmp>0.4&&error_tmp<=0.6)    
-  325   1      //  {    PID_Set(&turn_pid,117,11,0); }   
-  326   1      //  else if(error_tmp>0.6&&error_tmp<=0.9)    
-  327   1      //  {    PID_Set(&turn_pid,117,12,0); }
-  328   1      //  else if(error_tmp>0.9)    
-  329   1      //  {    PID_Set(&turn_pid,120,13.5,0); }
-  330   1      }
-  331          
-  332          
-  333          //��������T
-  334          //ת������J=1
-  335          //Ħ��ϵ��f=1
-  336          //ǰ�����ڣ�Gf(s)=s+1
-  337          //���ٶ�/���أ�G(s)=1/(s+1)
-  338          //�����out=(in-last_in)/T+in ;
-  339          float forwardfeed_L(float inc_in)       
-  340          {
-  341   1        float inc_out;
-  342   1        inc_out=(inc_in-last_in_L)*forward_flag+inc_in ;
-  343   1      //  out=(1.0/in)+in ;
-  344   1        last_in_L = inc_in;
-  345   1        return inc_out;
-  346   1      }
-  347          
-  348          float forwardfeed_R(float inc_in)       
-  349          {
-  350   1        float inc_out;
-  351   1        inc_out=(inc_in-last_in_R)*forward_flag+inc_in ;
-  352   1      //  out=(1.0/in)+in ;
-  353   1        last_in_R = inc_in;
-  354   1        return inc_out;
-  355   1      }
-  356          
-  357          
-  358          float forwardfeed_turn(float inc_in)        
-  359          {
-  360   1        float inc_out;
-  361   1        inc_out=(inc_in-last_in_turn)*0.15+inc_in ;
-  362   1      //  out=(1.0/in)+in ;
-  363   1        last_in_turn = inc_in;
-  364   1        return inc_out;
-  365   1      }
-  366          
-  367          
-  368          
-  369          
-
-
-Module Information          Static   Overlayable
-------------------------------------------------
-  code size            =      5319     ------
-  ecode size           =    ------     ------
-  data size            =    ------     ------
-  idata size           =    ------     ------
-  pdata size           =    ------     ------
-  xdata size           =    ------     ------
-  xdata-const size     =    ------     ------
-  edata size           =        97     ------
-  bit size             =    ------     ------
-  ebit size            =    ------     ------
-  bitaddressable size  =    ------     ------
-  ebitaddressable size =    ------     ------
-  far data size        =    ------     ------
-  huge data size       =    ------     ------
-C251 COMPILER V5.60.0,  motor                                                              15/07/24  23:32:10  PAGE 7   
-
-  const size           =    ------     ------
-  hconst size          =       153     ------
-End of Module Information.
-
-
-C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
+C251 COMPILATION COMPLETE.  10 WARNING(S),  4 ERROR(S)

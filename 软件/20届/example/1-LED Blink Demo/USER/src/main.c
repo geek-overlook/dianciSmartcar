@@ -9,7 +9,7 @@
  *
  * @file       		main
  * @company	   		成都逐飞科技有限公司
- * @author     		逐飞科技(QQ790875685)
+ * @author     		逐飞科技(QQ7908756   85)
  * @version    		查看doc内version文件 版本说明
  * @Software 		MDK FOR C251 V5.60
  * @Target core		STC32G12K128
@@ -58,15 +58,19 @@ void IPS(void)
 void main()
 {
 	board_init();			// 初始化寄存器,勿删除此句代码。
-	lcd_init(); 
-  lcd_clear(WHITE); 
-	
+//	lcd_init(); 
+//  lcd_clear(WHITE); 
+	ips114_init();
 
 
 	while(1)
 	{
-		
-		lcd_showstr(0, 180, "RAMP_NONE ");
+//		ips114_showstr(0,0,"seekfree");
+		ips114_showstr(0,0,"seekfree");//坐标0,0写一个字符x
+		ips114_showstr(0,2,"dsgdfrh");//坐标0,0写一个字符x
+		ips114_showstr(0,4,"dsaga");//坐标0,0写一个字符x
+		ips114_showstr(0,6,"htehuasdbgh");//坐标0,0写一个字符x
+//		lcd_showstr(0, 180, "RAMP_NONE ");
 
 
 		delay_ms(500);

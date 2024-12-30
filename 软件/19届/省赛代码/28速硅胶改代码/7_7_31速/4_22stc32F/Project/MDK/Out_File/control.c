@@ -1,13 +1,13 @@
 #include "headfile.h"
 
-PID_TypDef mr_pid,ml_pid,R_pid,L_pid,Steer_pid,turn_pid,w_pid;	//×óÓÒµç»úPID
+PID_TypDef mr_pid,ml_pid,R_pid,L_pid,Steer_pid,turn_pid,w_pid;	//ï¿½ï¿½ï¿½Òµï¿½ï¿½PID
 PID_TypDef s_pid;
 
 void PID_init(PID_TypDef* sptr)
 {
-		sptr->Kp = 0.0;             // ±ÈÀý³£Êý Proportional Const
-		sptr->Ki = 0.0;               // »ý·Ö³£Êý Integral Const
-		sptr->Kd = 0.0;             // Î¢·Ö³£Êý Derivative Const
+		sptr->Kp = 0.0;             // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Proportional Const
+		sptr->Ki = 0.0;               // ï¿½ï¿½ï¿½Ö³ï¿½ï¿½ï¿½ Integral Const
+		sptr->Kd = 0.0;             // Î¢ï¿½Ö³ï¿½ï¿½ï¿½ Derivative Const
 		sptr->Kd2 = 0.0;
 		sptr->Bias      = 0.0;    
 		sptr->Integral  = 0.0;
@@ -17,7 +17,7 @@ void PID_init(PID_TypDef* sptr)
 			
 }
 
-//PIDÉèÖÃ
+
 void PID_Set(PID_TypDef *PID,float Kp,float Ki,float Kd)
 {
 	PID->Kp = Kp;
@@ -33,15 +33,15 @@ void PID_turnSet(PID_TypDef *PID,float Kp,float Ki,float Kd,float Kd2)
 	PID->Kd2 = Kd2;
 }
 
-//ËÙ¶È»·(ÔöÁ¿Ê½PID)
+//ï¿½Ù¶È»ï¿½(ï¿½ï¿½ï¿½ï¿½Ê½PID)
 float IncPID(float Encoder,float Target,PID_TypDef* sptr) 
 {
   float	Pwm;
 	
-  sptr->Bias = Target - Encoder;                                     // ¼ÆËãµ±Ç°Îó²î
+  sptr->Bias = Target - Encoder;                                     // ï¿½ï¿½ï¿½ãµ±Ç°ï¿½ï¿½ï¿½
   Pwm = sptr->Kp * (sptr->Bias-sptr->Last_Bias)+sptr->Ki * sptr->Bias +sptr->Kd * (sptr->Bias-2*sptr->Last_Bias+sptr->Pre_Bias);  //P I D
 //  p=((sptr->Bias-sptr->Last_Bias));
-  sptr->Pre_Bias=sptr->Last_Bias;                          // ´æ´¢Îó²î£¬ÓÃÓÚÏÂ´Î¼ÆËã
+  sptr->Pre_Bias=sptr->Last_Bias;                          // ï¿½æ´¢ï¿½ï¿½î£¬ï¿½ï¿½ï¿½ï¿½ï¿½Â´Î¼ï¿½ï¿½ï¿½
   sptr->Last_Bias=sptr->Bias;		
 	
 //	if(abs(Pwm)<=10)
@@ -49,12 +49,12 @@ float IncPID(float Encoder,float Target,PID_TypDef* sptr)
 //		Pwm=0;
 //	}
 	 
-  return Pwm;                                    // ·µ»ØÔöÁ¿Öµ
+  return Pwm;                                    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµ
 	
 }
 
 
-//Î»ÖÃÊ½PID
+//Î»ï¿½ï¿½Ê½PID
 float PstPID(float Angle, float Target,PID_TypDef* sptr)
 {
 	float Pwm;
@@ -72,11 +72,11 @@ float PstPID(float Angle, float Target,PID_TypDef* sptr)
 	
 }
 
-//×ªÏòÔöÁ¿Ê½PID
+//×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê½PID
 float turn_PstPID(float turn_error,PID_TypDef* sptr)
 {
   float	Pwm;
-  sptr->Bias = turn_error;                                     // ¼ÆËãµ±Ç°Îó²î
+  sptr->Bias = turn_error;                                     // ï¿½ï¿½ï¿½ãµ±Ç°ï¿½ï¿½ï¿½
 	
 	Pwm = sptr->Kp * (sptr->Bias-sptr->Last_Bias)+sptr->Ki * sptr->Bias +sptr->Kd * sptr->Bias *fabs(sptr->Bias)+sptr->Kd2*sptr->Bias *sptr->Bias *sptr->Bias ;  //P I D
 	
@@ -86,12 +86,12 @@ float turn_PstPID(float turn_error,PID_TypDef* sptr)
 //	Pwm = sptr->Kp * (sptr->Bias-sptr->Last_Bias)+sptr->Ki * sptr->Bias +sptr->Kd * sptr->Bias *fabs(sptr->Bias) * 1.1;  
 	
 //  p=((sptr->Bias-sptr->Last_Bias));
-  sptr->Pre_Bias=sptr->Last_Bias;                          // ´æ´¢Îó²î£¬ÓÃÓÚÏÂ´Î¼ÆËã
+  sptr->Pre_Bias=sptr->Last_Bias;                          // ï¿½æ´¢ï¿½ï¿½î£¬ï¿½ï¿½ï¿½ï¿½ï¿½Â´Î¼ï¿½ï¿½ï¿½
   sptr->Last_Bias=sptr->Bias;		
 	
 
 	 
-  return Pwm;                                    // ·µ»ØÔöÁ¿Öµ
+  return Pwm;                                    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµ
 	
 	
 }

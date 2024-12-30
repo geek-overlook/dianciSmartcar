@@ -52,7 +52,7 @@ void main()
 				}
 			switch (display_mode){
 				case 0 :{
-					display_0();
+					displa_0();
 					break;
 				}
 				case 1 :{
